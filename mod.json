@@ -1,0 +1,30 @@
+{
+	"geode": "5.8.0",
+	"gd": {
+		"win": "2.2081",
+		"android": "2.2081",
+		"mac": "2.2081",
+		"ios": "2.2081"
+	},
+	"id": "combanana2.mod-universal",
+	"name": "Mod Universal",
+	"version": "v0.0.1",
+	"developer": "ComBanana2",
+	"description": "A universal mod for just about everything.",
+	"dependencies": {
+		"geode.node-ids": ">=v1.23.3"
+	},
+	"settings": {
+        "toggle-menu": {
+			"type": "keybind",
+    		"name": "Toggle Mod Menu",
+	    	"default": "F3",
+    		"category": "universal"
+		}
+	},
+	"resources": {
+	    "sprites": [
+	        "resources/*.png"
+	    ]
+	}
+}
