@@ -19,13 +19,6 @@ class $modify(ModUniversalPlayLayer, PlayLayer) {
 };
 
 class $modify(ModUniversalPlayerObject, PlayerObject) {
-    bool collidedWithObject(float dt, GameObject* object) {
-        if (ModMenu::isNoclipEnabled())
-            return false;
-
-        return PlayerObject::collidedWithObject(dt, object);
-    }
-
     bool collidedWithObject(
         float dt,
         GameObject* object,
