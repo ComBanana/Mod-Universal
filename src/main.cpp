@@ -42,17 +42,6 @@ class $modify(ModUniversalPlayerObject, PlayerObject) {
             skipCheck
         );
     }
-
-    void collidedWithSlope(
-        float dt,
-        GameObject* object,
-        bool skipPre
-    ) {
-        if (ModMenu::isNoclipEnabled())
-            return;
-
-        PlayerObject::collidedWithSlope(dt, object, skipPre);
-    }
 };
 
 $on_mod(Loaded) {
