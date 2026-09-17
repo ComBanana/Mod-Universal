@@ -264,3 +264,16 @@ void ModMenu::onTab(CCObject* sender) {
     menu->addChild(testButton);
     m_contentPanel->addChild(menu);
 }
+
+void ModMenu::onNoclip(CCObject* sender) {
+    setNoclipEnabled(!isNoclipEnabled());
+
+    auto button = static_cast<CCMenuItemSpriteExtra*>(sender);
+    auto sprite = typeinfo_cast<ButtonSprite*>(button->getNormalImage());
+
+    if (sprite) {
+        sprite->setString(
+            isNoclipEnabled() ? "Noclip: ON" : "Noclip: OFF"
+        );
+    }
+}
