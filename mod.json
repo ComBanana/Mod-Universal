@@ -15,16 +15,93 @@
 		"geode.node-ids": ">=v1.23.3"
 	},
 	"settings": {
-        "toggle-menu": {
+		"toggle-menu": {
 			"type": "keybind",
-    		"name": "Toggle Mod Menu",
-	    	"default": "F3",
-    		"category": "universal"
+			"name": "Toggle Mod Menu",
+			"default": "F3",
+			"category": "universal"
+		},
+		"noclip-enabled": {
+			"type": "bool",
+			"name": "Noclip",
+			"default": false,
+			"category": "universal"
+		},
+		"noclip-phase-blocks": {
+			"type": "bool",
+			"name": "Phase Through Blocks",
+			"default": true,
+			"category": "noclip",
+			"enable-if": "noclip-enabled"
+		},
+		"noclip-block-mode": {
+			"type": "string",
+			"name": "Block Collision Mode",
+			"default": "no-touch",
+			"one-of": ["safe-touch", "no-touch"],
+			"category": "noclip",
+			"enable-if": "noclip-enabled && noclip-phase-blocks"
+		},
+		"noclip-phase-slopes": {
+			"type": "bool",
+			"name": "Phase Through Slopes",
+			"default": true,
+			"category": "noclip",
+			"enable-if": "noclip-enabled"
+		},
+		"noclip-phase-hazards": {
+			"type": "bool",
+			"name": "Phase Through Hazards",
+			"default": true,
+			"category": "noclip",
+			"enable-if": "noclip-enabled"
+		},
+		"noclip-hazard-spikes": {
+			"type": "bool",
+			"name": "Spikes",
+			"default": true,
+			"category": "noclip-hazards",
+			"enable-if": "noclip-enabled && noclip-phase-hazards"
+		},
+		"noclip-hazard-ground-spikes": {
+			"type": "bool",
+			"name": "Ground / Edge Spikes",
+			"default": true,
+			"category": "noclip-hazards",
+			"enable-if": "noclip-enabled && noclip-phase-hazards"
+		},
+		"noclip-hazard-saws": {
+			"type": "bool",
+			"name": "Sawblades",
+			"default": true,
+			"category": "noclip-hazards",
+			"enable-if": "noclip-enabled && noclip-phase-hazards"
+		},
+		"noclip-hazard-pits": {
+			"type": "bool",
+			"name": "Pits",
+			"default": true,
+			"category": "noclip-hazards",
+			"enable-if": "noclip-enabled && noclip-phase-hazards"
+		},
+		"noclip-hazard-animated": {
+			"type": "bool",
+			"name": "Animated Hazards",
+			"default": true,
+			"category": "noclip-hazards",
+			"enable-if": "noclip-enabled && noclip-phase-hazards"
+		},
+		"noclip-hazard-other": {
+			"type": "bool",
+			"name": "Other Hazards",
+			"default": true,
+			"category": "noclip-hazards",
+			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		}
 	},
 	"resources": {
-	    "sprites": [
-	        "resources/*.png"
-	    ]
+		"sprites": [
+			"resources/*.png"
+		]
 	}
 }
