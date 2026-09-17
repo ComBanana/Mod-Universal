@@ -128,9 +128,7 @@ protected:
         if (tag < 0 || tag >= 6)
             return;
 
-        auto key = keys[tag];
-        auto current = Mod::get()->getSettingValue<bool>(key);
-        Mod::get()->setSettingValue<bool>(key, !current);
+        Mod::get()->setSettingValue<bool>(keys[tag], toggle->isToggled());
     }
 
     void onClosePopup(CCObject*) {
@@ -191,6 +189,8 @@ protected:
             "GJ_button_01.png",
             0.62f
         );
+        hazardButtonSprite->setColor({135, 135, 135});
+        hazardButtonSprite->setOpacity(150);
 
         auto hazardButton = CCMenuItemSpriteExtra::create(
             hazardButtonSprite,
@@ -198,10 +198,11 @@ protected:
             menu_selector(NoclipSettingsPopup::onHazardSettings)
         );
         hazardButton->setPosition({m_size.width / 2.f, 78.f});
+        hazardButton->setEnabled(false);
         menu->addChild(hazardButton);
 
         auto info = createMenuLabel(
-            "Geometry and hazards can be controlled independently.",
+            "Hazard configuration is temporarily unavailable.",
             0.3f
         );
         info->setPosition({m_size.width / 2.f, 51.f});
@@ -280,9 +281,7 @@ protected:
         if (tag < 0 || tag >= 3)
             return;
 
-        auto key = keys[tag];
-        auto current = Mod::get()->getSettingValue<bool>(key);
-        Mod::get()->setSettingValue<bool>(key, !current);
+        Mod::get()->setSettingValue<bool>(keys[tag], toggle->isToggled());
     }
 
     void onBlockMode(CCObject*) {
@@ -509,40 +508,42 @@ void ModMenu::onTab(CCObject* sender) {
 
     if (tab == 0) {
         auto menu = CCMenu::create();
-        menu->setPosition(m_contentPanel->getContentSize() / 2.f);
+        menu->setPosition({0.f, 0.f});
         m_contentPanel->addChild(menu);
 
-        auto noclipSprite = ButtonSprite::create(
-            ModMenu::isNoclipEnabled()
-                ? "Noclip: ON"
-                : "Noclip: OFF",
-            "goldFont.fnt",
-            "GJ_button_01.png",
-            0.68f
-        );
+        auto noclipLabel = createMenuLabel("Noclip", 0.5f);
+        noclipLabel->setAnchorPoint({0.f, 0.5f});
+        noclipLabel->setPosition({105.f, 62.f});
+        m_contentPanel->addChild(noclipLabel);
 
-        auto noclipButton = CCMenuItemSpriteExtra::create(
-            noclipSprite,
+        auto gearSprite = CCSprite::createWithSpriteFrameName("GJ_optionsBtn02_001.png");
+
+        if (gearSprite) {
+            gearSprite->setScale(0.72f);
+
+            auto gearButton = CCMenuItemSpriteExtra::create(
+                gearSprite,
+                this,
+                menu_selector(ModMenu::onNoclipSettings)
+            );
+            gearButton->setPosition({255.f, 62.f});
+            menu->addChild(gearButton);
+        }
+        else {
+            log::warn("Could not load noclip settings gear sprite");
+        }
+
+        auto noclipToggle = createCheckbox(
+            menu,
             this,
-            menu_selector(ModMenu::onNoclip)
-        );
-        noclipButton->setPosition({-65.f, 12.f});
-        menu->addChild(noclipButton);
-
-        auto settingsSprite = ButtonSprite::create(
-            "Configure",
-            "goldFont.fnt",
-            "GJ_button_01.png",
-            0.60f
+            menu_selector(ModMenu::onNoclip),
+            ModMenu::isNoclipEnabled(),
+            0,
+            {305.f, 62.f}
         );
 
-        auto settingsButton = CCMenuItemSpriteExtra::create(
-            settingsSprite,
-            this,
-            menu_selector(ModMenu::onNoclipSettings)
-        );
-        settingsButton->setPosition({70.f, 12.f});
-        menu->addChild(settingsButton);
+        if (!noclipToggle)
+            log::warn("Could not create noclip checkbox");
 
         return;
     }
@@ -567,18 +568,12 @@ void ModMenu::onTab(CCObject* sender) {
 }
 
 void ModMenu::onNoclip(CCObject* sender) {
-    setNoclipEnabled(!isNoclipEnabled());
+    auto toggle = static_cast<CCMenuItemToggler*>(sender);
 
-    auto button = static_cast<CCMenuItemSpriteExtra*>(sender);
-    auto sprite = typeinfo_cast<ButtonSprite*>(button->getNormalImage());
+    if (!toggle)
+        return;
 
-    if (sprite) {
-        sprite->setString(
-            isNoclipEnabled()
-                ? "Noclip: ON"
-                : "Noclip: OFF"
-        );
-    }
+    setNoclipEnabled(toggle->isToggled());
 }
 
 void ModMenu::onNoclipSettings(CCObject*) {
