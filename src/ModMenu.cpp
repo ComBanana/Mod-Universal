@@ -178,32 +178,35 @@ void ModMenu::onClose(CCObject* sender) {
 }
 
 void ModMenu::onTab(CCObject* sender) {
-    auto btn = static_cast<CCMenuItemSpriteExtra*>(sender);
+    int tab = 0;
 
-    int tab = btn->getTag();
+    if (sender) {
+        auto btn = static_cast<CCMenuItemSpriteExtra*>(sender);
+        tab = btn->getTag();
 
-    log::info("Clicked tab {}", tab);
+        log::info("Clicked tab {}", tab);
 
-    // Light up the selected tab and restore all others.
-    auto menu = static_cast<CCMenu*>(btn->getParent());
+        auto tabMenu = static_cast<CCMenu*>(btn->getParent());
 
-    for (auto* child : CCArrayExt<CCNode*>(menu->getChildren())) {
-        auto otherButton =
-            typeinfo_cast<CCMenuItemSpriteExtra*>(child);
+        for (auto* child : CCArrayExt<CCNode*>(tabMenu->getChildren())) {
+            auto otherButton =
+                typeinfo_cast<CCMenuItemSpriteExtra*>(child);
 
-        if (!otherButton)
-            continue;
+            if (!otherButton)
+                continue;
 
-        auto sprite = otherButton->getNormalImage();
+            auto sprite =
+                typeinfo_cast<ButtonSprite*>(otherButton->getNormalImage());
 
-        if (!sprite)
-            continue;
+            if (!sprite)
+                continue;
 
-        sprite->setColor(
-            otherButton == btn
-                ? ccColor3B{120, 255, 120}
-                : ccColor3B{255, 255, 255}
-        );
+            sprite->setColor(
+                otherButton == btn
+                    ? ccColor3B{120, 255, 120}
+                    : ccColor3B{255, 255, 255}
+            );
+        }
     }
 
     if (!m_contentPanel)
@@ -213,6 +216,7 @@ void ModMenu::onTab(CCObject* sender) {
 
     if (tab == 0) {
         auto menu = CCMenu::create();
+
         menu->setPosition(
             m_contentPanel->getContentSize() / 2.f
         );
@@ -252,6 +256,7 @@ void ModMenu::onTab(CCObject* sender) {
     );
 
     auto menu = CCMenu::create();
+
     menu->setPosition(
         m_contentPanel->getContentSize() / 2.f
     );
@@ -259,4 +264,3 @@ void ModMenu::onTab(CCObject* sender) {
     menu->addChild(testButton);
     m_contentPanel->addChild(menu);
 }
-
