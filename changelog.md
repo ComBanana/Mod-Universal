@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2 - 2026-09-17
+
+### Fixed
+- Noclip settings are now explicitly saved when F3 closes the ModUniversal menu, matching the menu's actual open/close path.
+
 ## 0.1.1 - 2026-09-17
 
 ### Fixed
