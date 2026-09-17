@@ -8,9 +8,9 @@
 	},
 	"id": "combanana2.mod-universal",
 	"name": "Mod Universal",
-	"version": "v0.1.0",
+	"version": "v0.1.1",
 	"developer": "ComBanana2",
-	"description": "A growing Geometry Dash mega mod for player, visual, creator, and utility features.",
+	"description": "A growing Geometry Dash mega mod for player, visual, creator, and utility features, with highly customizable gameplay tools.",
 	"dependencies": {
 		"geode.node-ids": ">=v1.23.3"
 	},
