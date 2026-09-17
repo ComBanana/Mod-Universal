@@ -15,19 +15,29 @@ protected:
     void createContentPanel();
 
     void onNoclip(CCObject*);
+    void onNoclipSettings(CCObject*);
 
-    void onTab(CCObject *);
-    void onClose(CCObject *sender) override;
+    void onTab(CCObject*);
+    void onClose(CCObject* sender) override;
 
 public:
-    static ModMenu *create();
+    static ModMenu* create();
     static void toggle();
 
     static bool isNoclipEnabled();
     static void setNoclipEnabled(bool enabled);
 
-private:
-    inline static ModMenu *s_instance = nullptr;
+    static bool isPhaseThroughBlocksEnabled();
+    static bool isNoBlockTouchMode();
+    static bool isPhaseThroughSlopesEnabled();
+    static bool isPhaseThroughHazardsEnabled();
+    static bool isHazardCategoryEnabled(int category);
 
-    CCNode *m_contentPanel = nullptr;
+    static void openNoclipSettings();
+    static void openNoclipHazardSettings();
+
+private:
+    inline static ModMenu* s_instance = nullptr;
+
+    CCNode* m_contentPanel = nullptr;
 };
