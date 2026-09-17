@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1 - 2026-09-17
+
+### Fixed
+- Noclip setting changes are now saved immediately when changed from the custom ModUniversal menu, so closing and reopening the menu preserves the selected state.
+
 ## 0.1.0 - 2026-09-17
 
 ### Added
