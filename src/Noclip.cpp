@@ -9,6 +9,7 @@ using namespace geode::prelude;
 namespace {
 
 enum class HazardCategory {
+    None = -1,
     Spikes = 0,
     GroundSpikes = 1,
     Saws = 2,
@@ -19,7 +20,7 @@ enum class HazardCategory {
 
 HazardCategory classifyHazard(GameObject* object) {
     if (!object)
-        return HazardCategory::Other;
+        return HazardCategory::None;
 
     switch (object->m_objectID) {
         // Standard and small spike families.
@@ -106,7 +107,10 @@ HazardCategory classifyHazard(GameObject* object) {
             return HazardCategory::Animated;
 
         default:
-            return HazardCategory::Other;
+            // Unknown objects must never be treated as hazards. Otherwise
+            // ordinary blocks would incorrectly become phasable whenever
+            // the "Other Hazards" setting is enabled.
+            return HazardCategory::None;
     }
 }
 
@@ -124,6 +128,8 @@ bool isHazardCategoryEnabled(HazardCategory category) {
             return ModMenu::isHazardCategoryEnabled(4);
         case HazardCategory::Other:
             return ModMenu::isHazardCategoryEnabled(5);
+        case HazardCategory::None:
+            return false;
     }
 
     return false;
@@ -133,15 +139,38 @@ bool shouldPhaseDeath(GameObject* object) {
     if (!ModMenu::isNoclipEnabled())
         return false;
 
-    if (!ModMenu::isPhaseThroughHazardsEnabled())
+    auto category = classifyHazard(object);
+
+    // Falling / other non-object deaths are controlled by the Pits setting.
+    if (category == HazardCategory::None && !object) {
+        return ModMenu::isPhaseThroughHazardsEnabled() &&
+               ModMenu::isHazardCategoryEnabled(3);
+    }
+
+    // Known hazards are controlled exclusively by the hazard settings.
+    if (category != HazardCategory::None)
+        return ModMenu::isPhaseThroughHazardsEnabled() &&
+               isHazardCategoryEnabled(category);
+
+    // Safe Block Touch prevents deaths caused by non-hazard level objects
+    // while still allowing their collision to happen.
+    return ModMenu::isPhaseThroughBlocksEnabled() &&
+           !ModMenu::isNoBlockTouchMode();
+}
+
+bool shouldIgnoreBlockCollision(GameObject* object) {
+    if (!ModMenu::isNoclipEnabled())
         return false;
 
-    // A null source is typically a non-object death such as falling out.
-    // Keep full noclip behavior for those deaths while hazard phasing is enabled.
-    if (!object)
-        return true;
+    if (!ModMenu::isPhaseThroughBlocksEnabled())
+        return false;
 
-    return isHazardCategoryEnabled(classifyHazard(object));
+    if (!ModMenu::isNoBlockTouchMode())
+        return false;
+
+    // Never remove the collision path for a known hazard here. Hazard
+    // phasing is controlled separately by destroyPlayer.
+    return classifyHazard(object) == HazardCategory::None;
 }
 
 } // namespace
@@ -212,13 +241,8 @@ class $modify(ModUniversalPlayerObject, PlayerObject) {
         CCRect rect,
         bool skipCheck
     ) {
-        if (
-            ModMenu::isNoclipEnabled() &&
-            ModMenu::isPhaseThroughBlocksEnabled() &&
-            ModMenu::isNoBlockTouchMode()
-        ) {
+        if (shouldIgnoreBlockCollision(object))
             return false;
-        }
 
         return PlayerObject::collidedWithObject(
             dt,
