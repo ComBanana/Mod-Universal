@@ -1,2 +1,2 @@
 # Mod Universal | All in One
-Test mod menu I'm working with
+A growing Geometry Dash mega mod combining player, visual, creator, and utility features in one project.
