@@ -42,32 +42,6 @@ CCMenuItemToggler* createCheckbox(
     return toggle;
 }
 
-void addSettingRow(
-    CCNode* root,
-    CCMenu* menu,
-    char const* labelText,
-    char const* settingKey,
-    int tag,
-    CCPoint position
-) {
-    auto label = createMenuLabel(labelText);
-    label->setAnchorPoint({0.f, 0.5f});
-    label->setPosition(position);
-    root->addChild(label);
-
-    auto toggle = createCheckbox(
-        menu,
-        menu->getParent(),
-        nullptr,
-        Mod::get()->getSettingValue<bool>(settingKey),
-        tag,
-        {position.x + 310.f, position.y}
-    );
-
-    if (toggle)
-        toggle->setTarget(menu->getParent(), nullptr);
-}
-
 class NoclipHazardPopup : public Popup {
 protected:
     bool init() {
@@ -193,29 +167,9 @@ protected:
         menu->setPosition({0.f, 0.f});
         m_mainLayer->addChild(menu);
 
-        addToggleRow(
-            menu,
-            "Phase Through Blocks",
-            "noclip-phase-blocks",
-            0,
-            220.f
-        );
-
-        addToggleRow(
-            menu,
-            "Phase Through Slopes",
-            "noclip-phase-slopes",
-            1,
-            188.f
-        );
-
-        addToggleRow(
-            menu,
-            "Phase Through Hazards",
-            "noclip-phase-hazards",
-            2,
-            156.f
-        );
+        addToggleRow(menu, "Phase Through Blocks", "noclip-phase-blocks", 0, 220.f);
+        addToggleRow(menu, "Phase Through Slopes", "noclip-phase-slopes", 1, 188.f);
+        addToggleRow(menu, "Phase Through Hazards", "noclip-phase-hazards", 2, 156.f);
 
         auto modeLabel = createMenuLabel("Block Collision Mode", 0.42f);
         modeLabel->setAnchorPoint({0.f, 0.5f});
@@ -247,8 +201,8 @@ protected:
         menu->addChild(hazardButton);
 
         auto info = createMenuLabel(
-            "Noclip stays modular: geometry and hazards can be controlled independently.",
-            0.28f
+            "Geometry and hazards can be controlled independently.",
+            0.3f
         );
         info->setPosition({m_size.width / 2.f, 51.f});
         info->setOpacity(180);
@@ -628,8 +582,7 @@ void ModMenu::onNoclip(CCObject* sender) {
 }
 
 void ModMenu::onNoclipSettings(CCObject*) {
-    if (auto popup = NoclipSettingsPopup::create())
-        popup->show();
+    openNoclipSettings();
 }
 
 void ModMenu::openNoclipSettings() {
