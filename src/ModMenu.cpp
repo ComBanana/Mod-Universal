@@ -406,6 +406,25 @@ bool isCompactMenu(float width) {
     return width < 680.f;
 }
 
+CCMenu* createModernMenu(CCNode* parent) {
+    if (!parent)
+        return nullptr;
+
+    auto menu = CCMenu::create();
+    if (!menu)
+        return nullptr;
+
+    // CCMenu defaults to the game window's coordinate space. For a menu
+    // nested inside one of our panels/popups, make its coordinate space
+    // exactly match that parent.
+    menu->setContentSize(parent->getContentSize());
+    menu->setAnchorPoint({0.f, 0.f});
+    menu->ignoreAnchorPointForPosition(false);
+    menu->setPosition({0.f, 0.f});
+    parent->addChild(menu);
+    return menu;
+}
+
 
 struct NestedPopupEntry {
     WeakRef<Popup> popup;
@@ -535,9 +554,7 @@ protected:
             m_size.width - 40.f
         );
 
-        auto menu = CCMenu::create();
-        menu->setPosition({0.f, 0.f});
-        m_mainLayer->addChild(menu);
+        auto menu = createModernMenu(m_mainLayer);
 
         float const contentTop = m_size.height - 94.f;
         float const rowGap = std::min(
@@ -695,9 +712,7 @@ protected:
             m_size.width - 40.f
         );
 
-        auto menu = CCMenu::create();
-        menu->setPosition({0.f, 0.f});
-        m_mainLayer->addChild(menu);
+        auto menu = createModernMenu(m_mainLayer);
 
         float const topY = m_size.height - 101.f;
         addToggleRow(menu, "Block Phasing", "noclip-phase-blocks", topY);
@@ -969,9 +984,7 @@ bool ModMenu::init() {
     createTabBar();
     createContentPanel();
 
-    auto resetMenu = CCMenu::create();
-    resetMenu->setPosition({0.f, 0.f});
-    m_mainLayer->addChild(resetMenu);
+    auto resetMenu = createModernMenu(m_mainLayer);
 
     if (!createModernActionButton(
         resetMenu,
@@ -1021,9 +1034,7 @@ void ModMenu::createHeader() {
 }
 
 void ModMenu::createTabBar() {
-    auto menu = CCMenu::create();
-    menu->setPosition({0.f, 0.f});
-    m_mainLayer->addChild(menu);
+    auto menu = createModernMenu(m_mainLayer);
 
     constexpr const char* tabs[] = {
         "Player",
@@ -1277,9 +1288,7 @@ void ModMenu::onTab(CCObject* sender) {
 
     m_contentPanel->removeAllChildrenWithCleanup(true);
 
-    auto menu = CCMenu::create();
-    menu->setPosition({0.f, 0.f});
-    m_contentPanel->addChild(menu);
+    auto menu = createModernMenu(m_contentPanel);
 
     auto background = createModernPanel(
         m_contentPanel,
