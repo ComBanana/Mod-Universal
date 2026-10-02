@@ -8,7 +8,7 @@
 	},
 	"id": "combanana2.mod-universal",
 	"name": "Mod Universal",
-	"version": "v0.1.2",
+	"version": "v0.1.3",
 	"developer": "ComBanana2",
 	"description": "A growing Geometry Dash mega mod for player, visual, creator, and utility features, with highly customizable gameplay tools.",
 	"dependencies": {
@@ -21,6 +21,10 @@
 			"default": "F3",
 			"category": "universal"
 		},
+		"noclip-title": {
+			"type": "title",
+			"name": "Noclip"
+		},
 		"noclip-enabled": {
 			"type": "bool",
 			"name": "Noclip",
@@ -28,8 +32,8 @@
 		},
 		"noclip-phase-blocks": {
 			"type": "bool",
-			"name": "Phase Through Blocks",
-			"default": false,
+			"name": "Block Phasing",
+			"default": true,
 			"enable-if": "noclip-enabled"
 		},
 		"noclip-block-mode": {
@@ -41,50 +45,50 @@
 		},
 		"noclip-phase-slopes": {
 			"type": "bool",
-			"name": "Phase Through Slopes",
+			"name": "Slope Phasing",
 			"default": false,
 			"enable-if": "noclip-enabled"
 		},
 		"noclip-phase-hazards": {
 			"type": "bool",
-			"name": "Phase Through Hazards",
-			"default": false,
+			"name": "Spike Phasing",
+			"default": true,
 			"enable-if": "noclip-enabled"
 		},
 		"noclip-hazard-spikes": {
 			"type": "bool",
 			"name": "Spikes",
-			"default": false,
+			"default": true,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		},
 		"noclip-hazard-ground-spikes": {
 			"type": "bool",
 			"name": "Ground / Edge Spikes",
-			"default": false,
+			"default": true,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		},
 		"noclip-hazard-saws": {
 			"type": "bool",
 			"name": "Sawblades",
-			"default": false,
+			"default": true,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		},
 		"noclip-hazard-pits": {
 			"type": "bool",
 			"name": "Pits",
-			"default": false,
+			"default": true,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		},
 		"noclip-hazard-animated": {
 			"type": "bool",
 			"name": "Animated Hazards",
-			"default": false,
+			"default": true,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		},
 		"noclip-hazard-other": {
 			"type": "bool",
 			"name": "Other Hazards",
-			"default": false,
+			"default": true,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		}
 	},

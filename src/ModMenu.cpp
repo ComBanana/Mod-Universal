@@ -4,10 +4,137 @@
 #include <Geode/modify/PlayLayer.hpp>
 
 #include <algorithm>
+#include <filesystem>
 #include <functional>
 #include <vector>
 
 namespace {
+
+std::vector<std::string> const NoclipSettingKeys = {
+    "noclip-enabled",
+    "noclip-phase-blocks",
+    "noclip-block-mode",
+    "noclip-phase-slopes",
+    "noclip-phase-hazards",
+    "noclip-hazard-spikes",
+    "noclip-hazard-ground-spikes",
+    "noclip-hazard-saws",
+    "noclip-hazard-pits",
+    "noclip-hazard-animated",
+    "noclip-hazard-other",
+};
+
+void ensureSettingsFile() {
+    auto const path = Mod::get()->getSaveDir() / "settings.json";
+    std::error_code ec;
+
+    if (std::filesystem::exists(path, ec))
+        return;
+
+    if (ec) {
+        log::error(
+            "Failed to check settings file: {}",
+            ec.message()
+        );
+        return;
+    }
+
+    if (auto result = Mod::get()->saveData(); !result) {
+        log::error(
+            "Failed to create default settings file: {}",
+            result.unwrapErr()
+        );
+    }
+}
+
+bool areSettingsAtDefault(std::vector<std::string> const& keys) {
+    for (auto const& key : keys) {
+        if (auto setting = Mod::get()->getSetting(key);
+            setting && !setting->isDefaultValue()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void resetSettingsToDefault(std::vector<std::string> const& keys) {
+    for (auto const& key : keys) {
+        if (auto setting = Mod::get()->getSetting(key))
+            setting->reset();
+        else
+            log::warn("Could not find setting '{}'", key);
+    }
+
+    if (auto result = Mod::get()->saveData(); !result) {
+        log::error(
+            "Failed to save reset settings: {}",
+            result.unwrapErr()
+        );
+    }
+}
+
+CCMenuItemSpriteExtra* createHackDefaultButton(
+    CCMenu* menu,
+    std::vector<std::string> settingKeys,
+    CCPoint position
+) {
+    if (!menu || settingKeys.empty())
+        return nullptr;
+
+    auto sprite = CCSprite::createWithSpriteFrameName(
+        "GJ_undoBtn_001.png"
+    );
+
+    if (!sprite)
+        return nullptr;
+
+    sprite->setScale(0.8f);
+
+    auto const showButton = !areSettingsAtDefault(settingKeys);
+
+    auto button = CCMenuItemExt::createSpriteExtra(
+        sprite,
+        [keys = std::move(settingKeys)](CCMenuItemSpriteExtra*) {
+            resetSettingsToDefault(keys);
+            ModMenu::refreshCurrentTab();
+        }
+    );
+
+    if (!button)
+        return nullptr;
+
+    button->setPosition(position);
+    button->setVisible(showButton);
+    menu->addChild(button);
+    return button;
+}
+
+WeakRef<CCMenuItemSpriteExtra> s_noclipDefaultButton;
+WeakRef<CCMenuItemSpriteExtra> s_noclipSettingsButton;
+WeakRef<CCMenuItemSpriteExtra> s_noclipCheckboxButton;
+
+void updateNoclipRowLayout() {
+    bool const hasNoclipChanges = !areSettingsAtDefault(NoclipSettingKeys);
+
+    if (auto button = s_noclipDefaultButton.lock())
+        button->setVisible(hasNoclipChanges);
+
+    if (auto button = s_noclipSettingsButton.lock()) {
+        button->setPosition({
+            hasNoclipChanges ? 235.f : 275.f,
+            62.f
+        });
+    }
+
+    if (auto button = s_noclipCheckboxButton.lock()) {
+        button->setPosition({330.f, 62.f});
+    }
+}
+
+void updateNoclipDefaultButton() {
+    updateNoclipRowLayout();
+}
 
 CCLabelBMFont* createMenuLabel(char const* text, float scale = 0.45f) {
     auto label = CCLabelBMFont::create(text, "goldFont.fnt");
@@ -106,6 +233,7 @@ CCMenuItemSpriteExtra* createNoclipCheckbox(
 
             refreshNoclipCheckbox(item, next);
             saveNoclipButtonSettings();
+            updateNoclipDefaultButton();
 
             log::info(
                 "Noclip setting '{}' changed to {}",
@@ -124,7 +252,7 @@ CCMenuItemSpriteExtra* createNoclipCheckbox(
 }
 
 struct NestedPopupEntry {
-    Popup* popup = nullptr;
+    WeakRef<Popup> popup;
     std::function<void()> close;
 };
 
@@ -169,7 +297,12 @@ bool closeTopNestedPopup() {
         auto entry = std::move(s_nestedPopups.back());
         s_nestedPopups.pop_back();
 
-        if (!entry.popup || !entry.popup->getParent())
+        // The popup may already have been destroyed by its own close path.
+        // WeakRef::lock() safely returns null instead of dereferencing freed
+        // memory.
+        auto popup = entry.popup.lock();
+
+        if (!popup || !popup->getParent())
             continue;
 
         if (entry.close)
@@ -307,9 +440,9 @@ protected:
         menu->setPosition({0.f, 0.f});
         m_mainLayer->addChild(menu);
 
-        addToggleRow(menu, "Phase Through Blocks", "noclip-phase-blocks", 220.f);
-        addToggleRow(menu, "Phase Through Slopes", "noclip-phase-slopes", 188.f);
-        addToggleRow(menu, "Phase Through Hazards", "noclip-phase-hazards", 156.f);
+        addToggleRow(menu, "Block Phasing", "noclip-phase-blocks", 220.f);
+        addToggleRow(menu, "Slope Phasing", "noclip-phase-slopes", 188.f);
+        addToggleRow(menu, "Spike Phasing", "noclip-phase-hazards", 156.f);
 
         auto modeLabel = createMenuLabel("Block Collision Mode", 0.42f);
         modeLabel->setAnchorPoint({0.f, 0.5f});
@@ -336,6 +469,11 @@ protected:
             this,
             menu_selector(NoclipSettingsPopup::onHazardSettings)
         );
+
+        // Temporarily disabled while the hazard configuration system is being
+        // reworked. Keep the button visible but gray.
+        hazardButtonSprite->setColor({120, 120, 120});
+        hazardButton->setEnabled(false);
         hazardButton->setPosition({m_size.width / 2.f, 78.f});
         menu->addChild(hazardButton);
 
@@ -391,8 +529,8 @@ protected:
     ButtonSprite* createBlockModeButton() {
         auto mode = Mod::get()->getSettingValue<std::string>("noclip-block-mode");
         auto text = mode == "no-touch"
-            ? "No Block Touch"
-            : "Safe Block Touch";
+            ? "No Hitbox"
+            : "Standard";
 
         return ButtonSprite::create(
             text,
@@ -413,10 +551,12 @@ protected:
         if (m_blockModeButton) {
             m_blockModeButton->setString(
                 next == "no-touch"
-                    ? "No Block Touch"
-                    : "Safe Block Touch"
+                    ? "No Hitbox"
+                    : "Standard"
             );
         }
+
+        updateNoclipDefaultButton();
     }
 
     void onHazardSettings(CCObject*) {
@@ -460,12 +600,31 @@ public:
 } // namespace
 
 bool ModMenu::init() {
+    ensureSettingsFile();
+
     if (!Popup::init(460.f, 235.f))
         return false;
 
     createHeader();
     createTabBar();
     createContentPanel();
+
+    auto resetSprite = ButtonSprite::create(
+        "Set to Default",
+        "goldFont.fnt",
+        "GJ_button_01.png",
+        0.5f
+    );
+
+    if (resetSprite) {
+        auto resetButton = CCMenuItemSpriteExtra::create(
+            resetSprite,
+            this,
+            menu_selector(ModMenu::onSetAllToDefault)
+        );
+        resetButton->setPosition({m_size.width - 70.f, 15.f});
+        m_mainLayer->addChild(resetButton);
+    }
 
     return true;
 }
@@ -619,11 +778,12 @@ void ModMenu::onClose(CCObject* sender) {
 }
 
 void ModMenu::onTab(CCObject* sender) {
-    int tab = 0;
+    int tab = m_currentTab;
 
     if (sender) {
         auto btn = static_cast<CCMenuItemSpriteExtra*>(sender);
         tab = btn->getTag();
+        m_currentTab = tab;
 
         log::info("Clicked tab {}", tab);
 
@@ -663,6 +823,16 @@ void ModMenu::onTab(CCObject* sender) {
 
         auto gearSprite = CCSprite::createWithSpriteFrameName("GJ_optionsBtn02_001.png");
 
+        auto noclipDefaultButton = createHackDefaultButton(
+            menu,
+            NoclipSettingKeys,
+            {280.f, 62.f}
+        );
+        s_noclipDefaultButton = noclipDefaultButton;
+
+        bool const hasNoclipChanges =
+            noclipDefaultButton && noclipDefaultButton->isVisible();
+
         if (gearSprite) {
             gearSprite->setScale(0.72f);
 
@@ -671,7 +841,11 @@ void ModMenu::onTab(CCObject* sender) {
                 this,
                 menu_selector(ModMenu::onNoclipSettings)
             );
-            gearButton->setPosition({255.f, 62.f});
+            gearButton->setPosition({
+                hasNoclipChanges ? 235.f : 275.f,
+                62.f
+            });
+            s_noclipSettingsButton = gearButton;
             menu->addChild(gearButton);
         }
         else {
@@ -681,8 +855,9 @@ void ModMenu::onTab(CCObject* sender) {
         auto noclipToggle = createNoclipCheckbox(
             menu,
             "noclip-enabled",
-            {305.f, 62.f}
+            {330.f, 62.f}
         );
+        s_noclipCheckboxButton = noclipToggle;
 
         if (!noclipToggle)
             log::warn("Could not create noclip checkbox");
@@ -711,6 +886,28 @@ void ModMenu::onTab(CCObject* sender) {
 
 void ModMenu::onNoclipSettings(CCObject*) {
     openNoclipSettings();
+}
+
+void ModMenu::refreshCurrentTab() {
+    if (s_instance && s_instance->m_contentPanel)
+        s_instance->onTab(nullptr);
+}
+
+void ModMenu::onSetAllToDefault(CCObject*) {
+    createQuickPopup(
+        "Set to Default",
+        "This will change all previously changed <cr>settings</c> "
+        "back to their <cy>default values</c>. This cannot be undone.",
+        "Cancel",
+        "Reset",
+        [this](auto, bool btn2) {
+            if (!btn2)
+                return;
+
+            resetSettingsToDefault(Mod::get()->getSettingKeys());
+            this->onTab(nullptr);
+        }
+    );
 }
 
 void ModMenu::openNoclipSettings() {

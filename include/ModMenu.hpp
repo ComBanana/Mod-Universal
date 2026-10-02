@@ -15,6 +15,7 @@ protected:
     void createContentPanel();
 
         void onNoclipSettings(CCObject*);
+    void onSetAllToDefault(CCObject*);
 
     void onTab(CCObject*);
     void onClose(CCObject* sender) override;
@@ -34,9 +35,11 @@ public:
 
     static void openNoclipSettings();
     static void openNoclipHazardSettings();
+    static void refreshCurrentTab();
 
 private:
     inline static ModMenu* s_instance = nullptr;
 
     CCNode* m_contentPanel = nullptr;
+    int m_currentTab = 0;
 };
