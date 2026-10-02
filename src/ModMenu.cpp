@@ -44,14 +44,30 @@ void refreshNoclipCheckbox(
     if (!button)
         return;
 
-    auto sprite = createNoclipCheckboxSprite(enabled);
+    auto sprite = typeinfo_cast<CCSprite*>(button->getNormalImage());
 
     if (!sprite) {
-        log::error("Failed to create Noclip checkbox sprite");
+        log::error("Failed to find Noclip checkbox sprite");
         return;
     }
 
-    button->setNormalImage(sprite);
+    // Do not replace the menu item's normal image here. Cocos2d's
+    // setNormalImage() resets the replacement sprite's anchor point and
+    // content geometry, which makes the button visibly jump after a click.
+    // Changing the existing sprite frame keeps its position, anchor and
+    // scale intact.
+    auto frame = CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(
+        enabled
+            ? "GJ_checkOn_001.png"
+            : "GJ_checkOff_001.png"
+    );
+
+    if (!frame) {
+        log::error("Failed to find Noclip checkbox frame");
+        return;
+    }
+
+    sprite->setSpriteFrame(frame);
 }
 
 CCMenuItemSpriteExtra* createNoclipCheckbox(
@@ -78,7 +94,16 @@ CCMenuItemSpriteExtra* createNoclipCheckbox(
             auto current = mod->getSettingValue<bool>(key);
             auto next = !current;
 
-            mod->setSettingValue<bool>(key, next);
+            if (key == "noclip-enabled") {
+                // Route the main Noclip control through the same ModMenu API
+                // used by the gameplay code rather than treating it as a
+                // generic UI-only boolean.
+                ModMenu::setNoclipEnabled(next);
+            }
+            else {
+                mod->setSettingValue<bool>(key, next);
+            }
+
             refreshNoclipCheckbox(item, next);
             saveNoclipButtonSettings();
 
