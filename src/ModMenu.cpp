@@ -157,20 +157,32 @@ void updateNoclipRowLayout() {
     float const panelWidth = panel->getContentSize().width;
     bool const compact = panelWidth < 560.f;
 
-    float const rightEdge = panelWidth - (compact ? 18.f : 22.f);
-    float const toggleHalfWidth =
+    float const toggleWidth =
         checkboxButton
-            ? checkboxButton->getContentSize().width / 2.f
-            : (compact ? 36.f : 39.f);
+            ? checkboxButton->getContentSize().width
+            : (compact ? 72.f : 78.f);
 
-    float const iconHalfWidth = 16.f;
+    float const iconSize = 32.f;
     float const gap = compact ? 9.f : 12.f;
 
-    float const checkboxX = rightEdge - toggleHalfWidth;
+    float const controlWidth =
+        toggleWidth +
+        gap + iconSize +
+        (hasNoclipChanges ? gap + iconSize : 0.f);
+
+    // When the card becomes narrow, center the whole control group instead of
+    // forcing it beside the description. This prevents overlays at unusual
+    // aspect ratios and very small windows.
+    bool const stackControls = panelWidth < 360.f;
+    float const startX = stackControls
+        ? (panelWidth - controlWidth) / 2.f
+        : panelWidth - (compact ? 18.f : 22.f) - controlWidth;
+
+    float const undoX = startX + iconSize / 2.f;
     float const gearX =
-        checkboxX - toggleHalfWidth - gap - iconHalfWidth;
-    float const undoX =
-        gearX - iconHalfWidth - gap - iconHalfWidth;
+        undoX + iconSize + gap + iconSize / 2.f;
+    float const checkboxX =
+        gearX + iconSize / 2.f + gap + toggleWidth / 2.f;
 
     if (defaultButton) {
         defaultButton->setVisible(hasNoclipChanges);
@@ -179,7 +191,7 @@ void updateNoclipRowLayout() {
 
     if (settingsButton) {
         settingsButton->setPosition({
-            hasNoclipChanges ? gearX : undoX,
+            gearX,
             s_noclipRowY
         });
     }
@@ -406,8 +418,14 @@ CCMenuItemSpriteExtra* createModernToggle(
 CCSize getResponsivePopupSize(float preferredWidth, float preferredHeight) {
     auto const screen = CCDirector::sharedDirector()->getWinSize();
 
-    float const availableWidth = std::max(220.f, screen.width - 24.f);
-    float const availableHeight = std::max(180.f, screen.height - 24.f);
+    // Use the actual available window dimensions independently. This keeps
+    // portrait windows tall enough for their vertical UI while allowing
+    // landscape windows to stay wide. Nothing is positioned from the screen
+    // after this point; all menu layout is derived from m_size.
+    float const availableWidth =
+        std::max(220.f, screen.width - 24.f);
+    float const availableHeight =
+        std::max(180.f, screen.height - 24.f);
 
     return {
         std::min(preferredWidth, availableWidth),
@@ -417,6 +435,34 @@ CCSize getResponsivePopupSize(float preferredWidth, float preferredHeight) {
 
 bool isCompactMenu(float width) {
     return width < 680.f;
+}
+
+struct CompactTabGrid {
+    int columns = 5;
+    int rows = 1;
+    float gap = 7.f;
+    float height = 36.f;
+    float navHeight = 54.f;
+};
+
+CompactTabGrid getCompactTabGrid(float width) {
+    CompactTabGrid grid;
+
+    if (width < 450.f) {
+        grid.columns = width < 340.f ? 2 : 3;
+        grid.height = 34.f;
+    }
+
+    grid.rows = (5 + grid.columns - 1) / grid.columns;
+
+    // Reserve exactly the space consumed by the rows plus a small breathing
+    // room so the content panel can never overlap the tab grid.
+    float const tabRowsHeight =
+        grid.rows * grid.height +
+        std::max(0, grid.rows - 1) * 6.f;
+
+    grid.navHeight = tabRowsHeight + 15.f;
+    return grid;
 }
 
 CCMenu* createModernMenu(CCNode* parent) {
@@ -1210,23 +1256,19 @@ void ModMenu::createTabBar() {
         return;
     }
 
-    // Compact layouts use a two-row tab grid only when the window is narrow
-    // enough to make five tabs in one row cramped.
-    bool const twoRows = m_size.width < 450.f;
-    int const columns = twoRows ? 3 : 5;
-    float const gap = 7.f;
+    auto const grid = getCompactTabGrid(m_size.width);
     float const horizontalPad = 16.f;
+    float const rowGap = 6.f;
     float const top = m_size.height - 85.f;
-    float const height = twoRows ? 34.f : 36.f;
     float const width =
-        (m_size.width - horizontalPad * 2.f - gap * (columns - 1))
-        / static_cast<float>(columns);
+        (m_size.width - horizontalPad * 2.f - grid.gap * (grid.columns - 1))
+        / static_cast<float>(grid.columns);
 
     for (int i = 0; i < 5; ++i) {
         auto background = CCLayerColor::create(
             {43, 46, 54, 255},
-            width,
-            height
+            std::max(1.f, width),
+            grid.height
         );
         if (!background)
             continue;
@@ -1236,7 +1278,8 @@ void ModMenu::createTabBar() {
 
         auto label = createMenuLabel(
             tabs[i],
-            twoRows ? 0.40f : 0.44f,
+            grid.columns == 2 ? 0.37f :
+            grid.columns == 3 ? 0.40f : 0.44f,
             {220, 223, 229}
         );
         if (!label)
@@ -1245,17 +1288,23 @@ void ModMenu::createTabBar() {
         label->setTag(7002);
         label->setPosition({
             width / 2.f,
-            height / 2.f + (twoRows ? 0.5f : 0.f)
+            grid.height / 2.f
         });
+        label->limitLabelWidth(
+            width - 14.f,
+            grid.columns == 2 ? 0.37f :
+            grid.columns == 3 ? 0.40f : 0.44f,
+            0.18f
+        );
         background->addChild(label);
 
         auto accent = CCLayerColor::create(
             {75, 190, 138, 255},
-            std::max(12.f, width - 8.f),
+            std::max(8.f, width - 8.f),
             3.f
         );
         if (accent) {
-            accent->setPosition({4.f, height - 5.f});
+            accent->setPosition({4.f, grid.height - 5.f});
             accent->setTag(7003);
             accent->setVisible(i == m_currentTab);
             background->addChild(accent);
@@ -1272,13 +1321,13 @@ void ModMenu::createTabBar() {
         if (!button)
             continue;
 
-        int const row = twoRows ? i / columns : 0;
-        int const col = twoRows ? i % columns : i;
+        int const row = i / grid.columns;
+        int const col = i % grid.columns;
 
         button->setTag(i);
         button->setPosition({
-            horizontalPad + width / 2.f + col * (width + gap),
-            top - row * (height + 6.f)
+            horizontalPad + width / 2.f + col * (width + grid.gap),
+            top - row * (grid.height + rowGap)
         });
         menu->addChild(button);
     }
@@ -1287,9 +1336,8 @@ void ModMenu::createTabBar() {
 void ModMenu::createContentPanel() {
     bool const compact = isCompactMenu(m_size.width);
 
-    float const navHeight = compact
-        ? (m_size.width < 450.f ? 89.f : 54.f)
-        : 0.f;
+    auto const grid = getCompactTabGrid(m_size.width);
+    float const navHeight = compact ? grid.navHeight : 0.f;
 
     float const left = compact ? 14.f : 178.f;
     float const top = m_size.height - 82.f - navHeight;
@@ -1301,8 +1349,8 @@ void ModMenu::createContentPanel() {
         return;
 
     m_contentPanel->setContentSize({
-        std::max(190.f, width),
-        std::max(140.f, height)
+        std::max(120.f, width),
+        std::max(96.f, height)
     });
     m_contentPanel->setPosition({left, 14.f});
     m_mainLayer->addChild(m_contentPanel);
@@ -1472,12 +1520,17 @@ void ModMenu::onTab(CCObject* sender) {
     );
 
     if (tab == 0) {
-        float const cardWidth = width - 40.f;
+        float const cardWidth = std::max(96.f, width - 40.f);
+        float const cardTop = height - 84.f;
+        float const cardBottom = 18.f;
+        float const availableCardHeight =
+            std::max(72.f, cardTop - cardBottom);
         float const cardHeight = std::min(
             166.f,
-            std::max(136.f, height - 112.f)
+            availableCardHeight
         );
-        float const cardY = height - 122.f;
+        float const cardY =
+            cardBottom + cardHeight / 2.f;
 
         auto card = createModernPanel(
             m_contentPanel,
@@ -1528,9 +1581,16 @@ void ModMenu::onTab(CCObject* sender) {
                 cardY + cardHeight / 2.f - 68.f
             });
 
-            float const controlReserve = compact ? 154.f : 168.f;
+            bool const stackControls = cardWidth < 360.f;
+            float const controlReserve = stackControls
+                ? 0.f
+                : (compact ? 154.f : 168.f);
+
             noclipDescription->limitLabelWidth(
-                std::max(100.f, cardWidth - 52.f - controlReserve),
+                std::max(
+                    88.f,
+                    cardWidth - 52.f - controlReserve
+                ),
                 compact ? 0.27f : 0.30f,
                 0.20f
             );
@@ -1541,7 +1601,10 @@ void ModMenu::onTab(CCObject* sender) {
         // Keep the controls anchored to the content panel, so their spacing
         // remains stable when the popup changes between desktop and compact
         // layouts.
-        s_noclipRowY = cardY - cardHeight / 2.f + 31.f;
+        bool const stackControls = cardWidth < 360.f;
+        s_noclipRowY = stackControls
+            ? cardY - cardHeight / 2.f + 24.f
+            : cardY - cardHeight / 2.f + 31.f;
 
         auto gearButton = static_cast<CCMenuItemSpriteExtra*>(nullptr);
         auto gearSprite = CCSprite::createWithSpriteFrameName(
@@ -1591,9 +1654,11 @@ void ModMenu::onTab(CCObject* sender) {
             menu,
             "noclip-enabled",
             {0.f, s_noclipRowY},
-            compact
-                ? CCSize{72.f, 30.f}
-                : CCSize{78.f, 32.f}
+            cardWidth < 360.f
+                ? CCSize{68.f, 29.f}
+                : compact
+                    ? CCSize{72.f, 30.f}
+                    : CCSize{78.f, 32.f}
         );
         s_noclipCheckboxButton = noclipToggle;
 
