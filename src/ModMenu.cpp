@@ -189,20 +189,16 @@ protected:
             "GJ_button_01.png",
             0.62f
         );
-        hazardButtonSprite->setColor({135, 135, 135});
-        hazardButtonSprite->setOpacity(150);
-
         auto hazardButton = CCMenuItemSpriteExtra::create(
             hazardButtonSprite,
             this,
             menu_selector(NoclipSettingsPopup::onHazardSettings)
         );
         hazardButton->setPosition({m_size.width / 2.f, 78.f});
-        hazardButton->setEnabled(false);
         menu->addChild(hazardButton);
 
         auto info = createMenuLabel(
-            "Hazard configuration is temporarily unavailable.",
+            "Configure which hazard types noclip ignores.",
             0.3f
         );
         info->setPosition({m_size.width / 2.f, 51.f});
