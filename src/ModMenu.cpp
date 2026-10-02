@@ -82,15 +82,14 @@ CCMenuItemSpriteExtra* createHackDefaultButton(
     if (!menu || settingKeys.empty())
         return nullptr;
 
-    auto sprite = ButtonSprite::create(
-        "Undo",
-        "goldFont.fnt",
-        "GJ_button_01.png",
-        0.42f
+    auto sprite = CCSprite::createWithSpriteFrameName(
+        "GJ_undoBtn_001.png"
     );
 
     if (!sprite)
         return nullptr;
+
+    sprite->setScale(0.8f);
 
     auto const showButton = !areSettingsAtDefault(settingKeys);
 
@@ -537,6 +536,8 @@ protected:
                     : "Safe Block Touch"
             );
         }
+
+        updateNoclipDefaultButton();
     }
 
     void onHazardSettings(CCObject*) {
@@ -803,6 +804,16 @@ void ModMenu::onTab(CCObject* sender) {
 
         auto gearSprite = CCSprite::createWithSpriteFrameName("GJ_optionsBtn02_001.png");
 
+        auto noclipDefaultButton = createHackDefaultButton(
+            menu,
+            NoclipSettingKeys,
+            {280.f, 62.f}
+        );
+        s_noclipDefaultButton = noclipDefaultButton;
+
+        bool const hasNoclipChanges =
+            noclipDefaultButton && noclipDefaultButton->isVisible();
+
         if (gearSprite) {
             gearSprite->setScale(0.72f);
 
@@ -811,24 +822,23 @@ void ModMenu::onTab(CCObject* sender) {
                 this,
                 menu_selector(ModMenu::onNoclipSettings)
             );
-            gearButton->setPosition({235.f, 62.f});
+            gearButton->setPosition({
+                hasNoclipChanges ? 235.f : 275.f,
+                62.f
+            });
             menu->addChild(gearButton);
         }
         else {
             log::warn("Could not load noclip settings gear sprite");
         }
 
-        auto noclipDefaultButton = createHackDefaultButton(
-            menu,
-            NoclipSettingKeys,
-            {280.f, 62.f}
-        );
-        s_noclipDefaultButton = noclipDefaultButton;
-
         auto noclipToggle = createNoclipCheckbox(
             menu,
             "noclip-enabled",
-            {330.f, 62.f}
+            {
+                hasNoclipChanges ? 330.f : 330.f,
+                62.f
+            }
         );
 
         if (!noclipToggle)
