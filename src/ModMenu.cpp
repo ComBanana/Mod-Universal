@@ -287,7 +287,6 @@ CCMenuItemSpriteExtra* createModernActionButton(
 
     background->ignoreAnchorPointForPosition(false);
     background->setAnchorPoint({0.5f, 0.5f});
-    background->ignoreAnchorPointForPosition(false);
 
     auto label = createMenuLabel(
         text,
@@ -1229,6 +1228,7 @@ void ModMenu::createTabBar() {
         if (!background)
             continue;
 
+        background->ignoreAnchorPointForPosition(false);
         background->setAnchorPoint({0.5f, 0.5f});
 
         auto label = createMenuLabel(
