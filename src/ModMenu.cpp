@@ -904,7 +904,7 @@ void ModMenu::onTab(CCObject* sender) {
         236
     );
 
-    auto tabTitles[] = {
+    constexpr const char* tabTitles[] = {
         "Player",
         "Visuals",
         "Creator",
@@ -912,7 +912,7 @@ void ModMenu::onTab(CCObject* sender) {
         "Settings"
     };
 
-    auto tabDescriptions[] = {
+    constexpr const char* tabDescriptions[] = {
         "Gameplay modifications and player controls.",
         "Visual and rendering tools.",
         "Level creation and editor tools.",
