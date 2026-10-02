@@ -440,9 +440,9 @@ protected:
         menu->setPosition({0.f, 0.f});
         m_mainLayer->addChild(menu);
 
-        addToggleRow(menu, "Phase Through Blocks", "noclip-phase-blocks", 220.f);
-        addToggleRow(menu, "Phase Through Slopes", "noclip-phase-slopes", 188.f);
-        addToggleRow(menu, "Phase Through Hazards", "noclip-phase-hazards", 156.f);
+        addToggleRow(menu, "Block Phasing", "noclip-phase-blocks", 220.f);
+        addToggleRow(menu, "Slope Phasing", "noclip-phase-slopes", 188.f);
+        addToggleRow(menu, "Spike Phasing", "noclip-phase-hazards", 156.f);
 
         auto modeLabel = createMenuLabel("Block Collision Mode", 0.42f);
         modeLabel->setAnchorPoint({0.f, 0.5f});
@@ -529,8 +529,8 @@ protected:
     ButtonSprite* createBlockModeButton() {
         auto mode = Mod::get()->getSettingValue<std::string>("noclip-block-mode");
         auto text = mode == "no-touch"
-            ? "No Block Touch"
-            : "Safe Block Touch";
+            ? "No Hitbox"
+            : "Standard";
 
         return ButtonSprite::create(
             text,
@@ -551,8 +551,8 @@ protected:
         if (m_blockModeButton) {
             m_blockModeButton->setString(
                 next == "no-touch"
-                    ? "No Block Touch"
-                    : "Safe Block Touch"
+                    ? "No Hitbox"
+                    : "Standard"
             );
         }
 
