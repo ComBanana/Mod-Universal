@@ -45,13 +45,15 @@ $on_mod(Loaded) {
             if (!down || repeat)
                 return;
 
-            // Never expose the ModUniversal menu while a level is active.
-            if (PlayLayer::get())
+            // Allow the menu while the level is paused, but never during
+            // active unpaused gameplay.
+            if (auto* playLayer = PlayLayer::get();
+                playLayer && !playLayer->m_isPaused) {
                 return;
+            }
 
-            // F3 is the ModUniversal menu's open/close key. The menu's
-            // toggle path removes the popup directly, so persist settings
-            // here to guarantee that the close action writes to disk.
+            // F3 is the ModUniversal menu's back/open key. ModMenu::toggle()
+            // closes the deepest nested popup first, then the main menu.
             saveNoclipSettings();
             ModMenu::toggle();
         }
