@@ -124,7 +124,7 @@ CCMenuItemSpriteExtra* createNoclipCheckbox(
 }
 
 struct NestedPopupEntry {
-    Popup* popup = nullptr;
+    WeakRef<Popup> popup;
     std::function<void()> close;
 };
 
@@ -169,7 +169,12 @@ bool closeTopNestedPopup() {
         auto entry = std::move(s_nestedPopups.back());
         s_nestedPopups.pop_back();
 
-        if (!entry.popup || !entry.popup->getParent())
+        // The popup may already have been destroyed by its own close path.
+        // WeakRef::lock() safely returns null instead of dereferencing freed
+        // memory.
+        auto popup = entry.popup.lock();
+
+        if (!popup || !popup->getParent())
             continue;
 
         if (entry.close)
