@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.1.3
+
+### Added
+- Added a “Set to Default” button along with an individual button in each mod.
+
+### Changed
+- Changed Noclip default states.
+- Changed some mod names to avoid confusion.
+- Temporarily disabled the “Configure Hazards” option in Noclip options.
+
+### Fixed
+- Fixed a bug involving closing menus that would crash the game.
+
 ## 0.1.2
 
 ### Fixed
