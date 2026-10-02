@@ -9,6 +9,9 @@ All notable changes to Mod Universal are documented here, with the newest releas
 - Added an individual **Undo** button for modified settings.
 
 ### Changed
+- Redesigned the ModUniversal menu with a sidebar navigation layout and larger content panels.
+- Refined menu hierarchy, spacing, headers, and section descriptions for a cleaner modern layout.
+- Refined the Noclip settings popups to match the new menu design.
 - Changed the default Noclip states.
 - Renamed several Noclip options to make their purpose clearer.
 - Temporarily disabled **Configure Hazards** while the hazard configuration system is being reworked.
