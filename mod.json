@@ -29,62 +29,62 @@
 		"noclip-phase-blocks": {
 			"type": "bool",
 			"name": "Phase Through Blocks",
-			"default": true,
+			"default": false,
 			"enable-if": "noclip-enabled"
 		},
 		"noclip-block-mode": {
 			"type": "string",
 			"name": "Block Collision Mode",
-			"default": "no-touch",
+			"default": "safe-touch",
 			"one-of": ["safe-touch", "no-touch"],
 			"enable-if": "noclip-enabled && noclip-phase-blocks"
 		},
 		"noclip-phase-slopes": {
 			"type": "bool",
 			"name": "Phase Through Slopes",
-			"default": true,
+			"default": false,
 			"enable-if": "noclip-enabled"
 		},
 		"noclip-phase-hazards": {
 			"type": "bool",
 			"name": "Phase Through Hazards",
-			"default": true,
+			"default": false,
 			"enable-if": "noclip-enabled"
 		},
 		"noclip-hazard-spikes": {
 			"type": "bool",
 			"name": "Spikes",
-			"default": true,
+			"default": false,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		},
 		"noclip-hazard-ground-spikes": {
 			"type": "bool",
 			"name": "Ground / Edge Spikes",
-			"default": true,
+			"default": false,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		},
 		"noclip-hazard-saws": {
 			"type": "bool",
 			"name": "Sawblades",
-			"default": true,
+			"default": false,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		},
 		"noclip-hazard-pits": {
 			"type": "bool",
 			"name": "Pits",
-			"default": true,
+			"default": false,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		},
 		"noclip-hazard-animated": {
 			"type": "bool",
 			"name": "Animated Hazards",
-			"default": true,
+			"default": false,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		},
 		"noclip-hazard-other": {
 			"type": "bool",
 			"name": "Other Hazards",
-			"default": true,
+			"default": false,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		}
 	},
