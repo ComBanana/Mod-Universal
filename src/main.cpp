@@ -23,10 +23,10 @@ $on_mod(Loaded) {
             "noclip-defaults-v0.1.3-applied",
             false
         )) {
-        Mod::get()->setSettingValue<bool>("noclip-enabled", true);
+        Mod::get()->setSettingValue<bool>("noclip-enabled", false);
         Mod::get()->setSettingValue<bool>("noclip-phase-blocks", true);
         Mod::get()->setSettingValue<std::string>("noclip-block-mode", "safe-touch");
-        Mod::get()->setSettingValue<bool>("noclip-phase-slopes", true);
+        Mod::get()->setSettingValue<bool>("noclip-phase-slopes", false);
         Mod::get()->setSettingValue<bool>("noclip-phase-hazards", true);
         Mod::get()->setSettingValue<bool>("noclip-hazard-spikes", true);
         Mod::get()->setSettingValue<bool>("noclip-hazard-ground-spikes", true);
