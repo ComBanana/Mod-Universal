@@ -557,62 +557,69 @@ void saveMenuSettings() {
 class NoclipHazardPopup : public Popup {
 protected:
     bool init() {
-        auto const popupSize = getResponsivePopupSize(540.f, 380.f);
+        auto const screen = CCDirector::sharedDirector()->getWinSize();
+        auto const popupSize = getResponsivePopupSize(
+            560.f,
+            screen.width < screen.height ? 620.f : 430.f
+        );
 
         if (!Popup::init(popupSize.width, popupSize.height))
             return false;
 
-        auto title = createMenuLabel("Spike Phasing", 0.68f);
-        title->setPosition({36.f, m_size.height - 34.f});
+        auto title = createMenuLabel(
+            "Spike Phasing",
+            m_size.width < 440.f ? 0.56f : 0.66f
+        );
         title->setAnchorPoint({0.f, 0.5f});
+        title->setPosition({20.f, m_size.height - 28.f});
         m_mainLayer->addChild(title);
 
         auto subtitle = createMutedMenuLabel(
-            "Choose which hazard categories are ignored by noclip.",
-            0.34f
+            "Choose which hazard categories are ignored by Noclip.",
+            m_size.width < 440.f ? 0.27f : 0.31f
         );
-        subtitle->setPosition({36.f, m_size.height - 58.f});
         subtitle->setAnchorPoint({0.f, 0.5f});
+        subtitle->setPosition({20.f, m_size.height - 49.f});
         m_mainLayer->addChild(subtitle);
 
-        createModernPanel(
+        createModernDivider(
             m_mainLayer,
-            {m_size.width / 2.f, (m_size.height - 20.f) / 2.f},
-            {m_size.width - 32.f, m_size.height - 116.f},
-            {38, 38, 45},
-            238
+            {m_size.width / 2.f, m_size.height - 67.f},
+            m_size.width - 40.f
         );
 
         auto menu = CCMenu::create();
         menu->setPosition({0.f, 0.f});
         m_mainLayer->addChild(menu);
 
-        float const topY = m_size.height - 101.f;
-        float const gap = std::max(
-            28.f,
-            std::min(35.f, (m_size.height - 156.f) / 5.f)
+        float const contentTop = m_size.height - 94.f;
+        float const rowGap = std::min(
+            43.f,
+            std::max(
+                35.f,
+                (contentTop - 80.f) / 5.f
+            )
         );
 
-        addToggleRow(menu, "Spikes", "noclip-hazard-spikes", topY);
-        addToggleRow(menu, "Ground / Edge Spikes", "noclip-hazard-ground-spikes", topY - gap);
-        addToggleRow(menu, "Sawblades", "noclip-hazard-saws", topY - gap * 2.f);
-        addToggleRow(menu, "Pits", "noclip-hazard-pits", topY - gap * 3.f);
-        addToggleRow(menu, "Animated Hazards", "noclip-hazard-animated", topY - gap * 4.f);
-        addToggleRow(menu, "Other Hazards", "noclip-hazard-other", topY - gap * 5.f);
+        addToggleRow(menu, "Spikes", "noclip-hazard-spikes", contentTop);
+        addToggleRow(menu, "Ground / Edge Spikes", "noclip-hazard-ground-spikes", contentTop - rowGap);
+        addToggleRow(menu, "Sawblades", "noclip-hazard-saws", contentTop - rowGap * 2.f);
+        addToggleRow(menu, "Pits", "noclip-hazard-pits", contentTop - rowGap * 3.f);
+        addToggleRow(menu, "Animated Hazards", "noclip-hazard-animated", contentTop - rowGap * 4.f);
+        addToggleRow(menu, "Other Hazards", "noclip-hazard-other", contentTop - rowGap * 5.f);
 
-        auto closeSprite = ButtonSprite::create(
+        auto closeButton = createModernActionButton(
+            menu,
             "Back",
-            "goldFont.fnt",
-            "GJ_button_01.png",
-            0.68f
+            {m_size.width / 2.f, 25.f},
+            {110.f, 32.f},
+            [this]() {
+                this->onClosePopup(nullptr);
+            }
         );
-        auto closeButton = CCMenuItemSpriteExtra::create(
-            closeSprite,
-            this,
-            menu_selector(NoclipHazardPopup::onClosePopup)
-        );
-        closeButton->setPosition({m_size.width / 2.f, 28.f});
-        menu->addChild(closeButton);
+
+        if (!closeButton)
+            log::warn("Could not create hazard popup Back button");
 
         return true;
     }
@@ -623,19 +630,32 @@ protected:
         char const* settingKey,
         float y
     ) {
-        auto label = createMenuLabel(labelText, 0.42f);
+        auto label = createMenuLabel(
+            labelText,
+            m_size.width < 440.f ? 0.40f : 0.45f
+        );
         label->setAnchorPoint({0.f, 0.5f});
-        label->setPosition({50.f, y});
+        label->setPosition({24.f, y});
         m_mainLayer->addChild(label);
 
-        auto toggle = createNoclipCheckbox(
+        auto toggle = createModernToggle(
             menu,
             settingKey,
-            {m_size.width - 56.f, y}
+            {m_size.width - 62.f, y},
+            {82.f, 32.f}
         );
 
         if (!toggle)
-            log::warn("Could not create noclip hazard checkbox for {}", settingKey);
+            log::warn(
+                "Could not create hazard toggle for {}",
+                settingKey
+            );
+
+        createModernDivider(
+            m_mainLayer,
+            {m_size.width / 2.f, y - 20.f},
+            m_size.width - 48.f
+        );
     }
 
     void onClosePopup(CCObject*) {
@@ -673,151 +693,228 @@ public:
 
 class NoclipSettingsPopup : public Popup {
 protected:
-    ButtonSprite* m_blockModeButton = nullptr;
+    CCLayerColor* m_blockModeBackground = nullptr;
+    CCLabelBMFont* m_blockModeLabel = nullptr;
 
     bool init() {
-        auto const popupSize = getResponsivePopupSize(560.f, 380.f);
+        auto const screen = CCDirector::sharedDirector()->getWinSize();
+        auto const popupSize = getResponsivePopupSize(
+            560.f,
+            screen.width < screen.height ? 620.f : 450.f
+        );
 
         if (!Popup::init(popupSize.width, popupSize.height))
             return false;
 
-        auto title = createMenuLabel("Noclip", 0.64f);
-        title->setPosition({26.f, m_size.height - 31.f});
+        auto title = createMenuLabel(
+            "Noclip",
+            m_size.width < 440.f ? 0.56f : 0.66f
+        );
         title->setAnchorPoint({0.f, 0.5f});
+        title->setPosition({20.f, m_size.height - 28.f});
         m_mainLayer->addChild(title);
 
         auto subtitle = createMutedMenuLabel(
-            "Configure how Noclip interacts with the level.",
-            0.30f
+            "Control how Noclip interacts with the level.",
+            m_size.width < 440.f ? 0.27f : 0.31f
         );
-        subtitle->setPosition({26.f, m_size.height - 53.f});
         subtitle->setAnchorPoint({0.f, 0.5f});
+        subtitle->setPosition({20.f, m_size.height - 49.f});
         m_mainLayer->addChild(subtitle);
 
-        createModernPanel(
+        createModernDivider(
             m_mainLayer,
-            {m_size.width / 2.f, (m_size.height - 20.f) / 2.f},
-            {m_size.width - 32.f, m_size.height - 116.f},
-            {38, 38, 45},
-            235
+            {m_size.width / 2.f, m_size.height - 67.f},
+            m_size.width - 40.f
         );
 
         auto menu = CCMenu::create();
         menu->setPosition({0.f, 0.f});
         m_mainLayer->addChild(menu);
 
-        float const rowY = m_size.height - 101.f;
-        addToggleRow(menu, "Block Phasing", "noclip-phase-blocks", rowY);
-        addToggleRow(menu, "Slope Phasing", "noclip-phase-slopes", rowY - 37.f);
-        addToggleRow(menu, "Spike Phasing", "noclip-phase-hazards", rowY - 74.f);
+        float const topY = m_size.height - 101.f;
+        addToggleRow(menu, "Block Phasing", "noclip-phase-blocks", topY);
+        addToggleRow(menu, "Slope Phasing", "noclip-phase-slopes", topY - 40.f);
+        addToggleRow(menu, "Spike Phasing", "noclip-phase-hazards", topY - 80.f);
 
-        auto modeLabel = createMenuLabel("Block Collision", 0.42f);
-        modeLabel->setAnchorPoint({0.f, 0.5f});
-        modeLabel->setPosition({55.f, 148.f});
-        m_mainLayer->addChild(modeLabel);
-
-        m_blockModeButton = createBlockModeButton();
-        auto modeButton = CCMenuItemSpriteExtra::create(
-            m_blockModeButton,
-            this,
-            menu_selector(NoclipSettingsPopup::onBlockMode)
+        auto collisionLabel = createMenuLabel(
+            "Block Collision",
+            m_size.width < 440.f ? 0.42f : 0.48f
         );
-        modeButton->setPosition({410.f, 148.f});
-        menu->addChild(modeButton);
+        collisionLabel->setAnchorPoint({0.f, 0.5f});
+        collisionLabel->setPosition({
+            24.f,
+            topY - 127.f
+        });
+        m_mainLayer->addChild(collisionLabel);
 
-        auto hazardButtonSprite = ButtonSprite::create(
+        m_blockModeBackground = CCLayerColor::create(
+            {52, 56, 66, 255},
+            132.f,
+            34.f
+        );
+
+        if (m_blockModeBackground) {
+            m_blockModeBackground->setAnchorPoint({0.5f, 0.5f});
+
+            m_blockModeLabel = createMenuLabel(
+                getBlockModeText(),
+                0.40f,
+                {232, 234, 238}
+            );
+
+            if (m_blockModeLabel) {
+                m_blockModeLabel->setPosition({66.f, 17.f});
+                m_blockModeBackground->addChild(m_blockModeLabel);
+            }
+
+            auto modeButton = CCMenuItemExt::createSpriteExtra(
+                m_blockModeBackground,
+                [this](CCMenuItemSpriteExtra*) {
+                    this->onBlockMode(nullptr);
+                }
+            );
+
+            if (modeButton) {
+                modeButton->setPosition({
+                    m_size.width - 104.f,
+                    topY - 127.f
+                });
+                menu->addChild(modeButton);
+            }
+        }
+
+        createModernDivider(
+            m_mainLayer,
+            {m_size.width / 2.f, topY - 151.f},
+            m_size.width - 48.f
+        );
+
+        auto hazardButton = createModernActionButton(
+            menu,
             "Configure Hazards",
-            "goldFont.fnt",
-            "GJ_button_01.png",
-            0.60f
-        );
-        auto hazardButton = CCMenuItemSpriteExtra::create(
-            hazardButtonSprite,
-            this,
-            menu_selector(NoclipSettingsPopup::onHazardSettings)
+            {m_size.width / 2.f, topY - 186.f},
+            {190.f, 34.f},
+            [this]() {
+                this->onHazardSettings(nullptr);
+            }
         );
 
-        // Temporarily disabled while the hazard configuration system is being
-        // reworked. Keep the button visible but gray.
-        hazardButtonSprite->setColor({120, 120, 120});
-        hazardButton->setEnabled(false);
-        hazardButton->setPosition({m_size.width / 2.f, 92.f});
-        menu->addChild(hazardButton);
+        if (hazardButton) {
+            auto hazardBackground =
+                typeinfo_cast<CCLayerColor*>(
+                    hazardButton->getNormalImage()
+                );
+
+            if (hazardBackground) {
+                hazardBackground->setColor({67, 69, 76});
+                hazardBackground->setOpacity(170);
+
+                auto hazardLabel =
+                    typeinfo_cast<CCLabelBMFont*>(
+                        hazardBackground->getChildByTag(7001)
+                    );
+
+                if (hazardLabel)
+                    hazardLabel->setColor({128, 131, 140});
+            }
+
+            hazardButton->setEnabled(false);
+        }
 
         auto info = createMutedMenuLabel(
-            "Hazard categories will be configurable here later.",
-            0.3f
+            "Hazard categories will be configurable later.",
+            0.29f
         );
-        info->setPosition({m_size.width / 2.f, 67.f});
+        info->setAnchorPoint({0.5f, 0.5f});
+        info->setPosition({
+            m_size.width / 2.f,
+            topY - 213.f
+        });
         m_mainLayer->addChild(info);
 
-        auto closeSprite = ButtonSprite::create(
+        auto backButton = createModernActionButton(
+            menu,
             "Back",
-            "goldFont.fnt",
-            "GJ_button_01.png",
-            0.68f
+            {m_size.width / 2.f, 24.f},
+            {110.f, 32.f},
+            [this]() {
+                this->onClosePopup(nullptr);
+            }
         );
-        auto closeButton = CCMenuItemSpriteExtra::create(
-            closeSprite,
-            this,
-            menu_selector(NoclipSettingsPopup::onClosePopup)
-        );
-        closeButton->setPosition({m_size.width / 2.f, 28.f});
-        menu->addChild(closeButton);
+
+        if (!backButton)
+            log::warn("Could not create Noclip popup Back button");
 
         return true;
     }
 
-    CCMenuItemSpriteExtra* addToggleRow(
+    char const* getBlockModeText() const {
+        return Mod::get()->getSettingValue<std::string>("noclip-block-mode") == "no-touch"
+            ? "No Hitbox"
+            : "Standard";
+    }
+
+    void addToggleRow(
         CCMenu* menu,
         char const* labelText,
         char const* settingKey,
         float y
     ) {
-        auto label = createMenuLabel(labelText, 0.44f);
+        auto label = createMenuLabel(
+            labelText,
+            m_size.width < 440.f ? 0.40f : 0.46f
+        );
         label->setAnchorPoint({0.f, 0.5f});
-        label->setPosition({50.f, y});
+        label->setPosition({24.f, y});
         m_mainLayer->addChild(label);
 
-        auto toggle = createNoclipCheckbox(
+        auto toggle = createModernToggle(
             menu,
             settingKey,
-            {448.f, y}
+            {m_size.width - 62.f, y},
+            {82.f, 32.f}
         );
 
         if (!toggle)
-            log::warn("Could not create noclip checkbox for {}", settingKey);
+            log::warn("Could not create Noclip toggle for {}", settingKey);
 
-        return toggle;
-    }
-
-    ButtonSprite* createBlockModeButton() {
-        auto mode = Mod::get()->getSettingValue<std::string>("noclip-block-mode");
-        auto text = mode == "no-touch"
-            ? "No Hitbox"
-            : "Standard";
-
-        return ButtonSprite::create(
-            text,
-            "goldFont.fnt",
-            "GJ_button_01.png",
-            0.50f
+        createModernDivider(
+            m_mainLayer,
+            {m_size.width / 2.f, y - 20.f},
+            m_size.width - 48.f
         );
     }
 
     void onBlockMode(CCObject*) {
-        auto current = Mod::get()->getSettingValue<std::string>("noclip-block-mode");
+        auto current =
+            Mod::get()->getSettingValue<std::string>("noclip-block-mode");
         auto next = current == "no-touch"
             ? "safe-touch"
             : "no-touch";
 
-        Mod::get()->setSettingValue<std::string>("noclip-block-mode", next);
+        Mod::get()->setSettingValue<std::string>(
+            "noclip-block-mode",
+            next
+        );
 
-        if (m_blockModeButton) {
-            m_blockModeButton->setString(
+        if (m_blockModeBackground)
+            m_blockModeBackground->setColor(
+                next == "no-touch"
+                    ? ccColor3B{75, 190, 138}
+                    : ccColor3B{52, 56, 66}
+            );
+
+        if (m_blockModeLabel) {
+            m_blockModeLabel->setString(
                 next == "no-touch"
                     ? "No Hitbox"
                     : "Standard"
+            );
+            m_blockModeLabel->setColor(
+                next == "no-touch"
+                    ? ccColor3B{18, 28, 24}
+                    : ccColor3B{232, 234, 238}
             );
         }
 
