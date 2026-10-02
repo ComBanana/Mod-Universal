@@ -34,6 +34,7 @@ public:
 
     static void openNoclipSettings();
     static void openNoclipHazardSettings();
+    static void refreshPlayerTab();
 
 private:
     inline static ModMenu* s_instance = nullptr;
