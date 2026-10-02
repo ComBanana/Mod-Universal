@@ -161,6 +161,15 @@ void updateNoclipDefaultButton() {
     updateNoclipRowLayout();
 }
 
+void saveNoclipButtonSettings() {
+    if (auto result = Mod::get()->saveData(); !result) {
+        log::error(
+            "Failed to save Noclip button settings: {}",
+            result.unwrapErr()
+        );
+    }
+}
+
 CCLabelBMFont* createMenuLabel(
     char const* text,
     float scale = 0.5f,
@@ -790,7 +799,7 @@ protected:
     void onBlockMode(CCObject*) {
         auto current =
             Mod::get()->getSettingValue<std::string>("noclip-block-mode");
-        auto next = current == "no-touch"
+        std::string const next = current == "no-touch"
             ? "safe-touch"
             : "no-touch";
 
@@ -1190,6 +1199,10 @@ void ModMenu::onTab(CCObject* sender) {
         return;
 
     m_contentPanel->removeAllChildrenWithCleanup(true);
+
+    auto menu = CCMenu::create();
+    menu->setPosition({0.f, 0.f});
+    m_contentPanel->addChild(menu);
 
     auto background = createModernPanel(
         m_contentPanel,
