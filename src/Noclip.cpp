@@ -23,7 +23,6 @@ HazardCategory classifyHazard(GameObject* object) {
         return HazardCategory::None;
 
     switch (object->m_objectID) {
-        // Standard and small spike families.
         case 8:
         case 103:
         case 144:
@@ -52,7 +51,6 @@ HazardCategory classifyHazard(GameObject* object) {
         case 1733:
             return HazardCategory::Spikes;
 
-        // Half, edge, and slope-oriented spike variants.
         case 39:
         case 145:
         case 178:
@@ -66,7 +64,6 @@ HazardCategory classifyHazard(GameObject* object) {
         case 1727:
             return HazardCategory::GroundSpikes;
 
-        // Saw and blade families.
         case 88:
         case 89:
         case 98:
@@ -84,7 +81,6 @@ HazardCategory classifyHazard(GameObject* object) {
         case 1736:
             return HazardCategory::Saws;
 
-        // Pit / ground hazard families.
         case 9:
         case 61:
         case 135:
@@ -100,18 +96,24 @@ HazardCategory classifyHazard(GameObject* object) {
         case 1721:
             return HazardCategory::Pits;
 
-        // 2.0 animated hazards.
         case 1701:
         case 1702:
         case 1703:
             return HazardCategory::Animated;
 
         default:
-            // Unknown objects must never be treated as hazards. Otherwise
-            // ordinary blocks would incorrectly become phasable whenever
-            // the "Other Hazards" setting is enabled.
-            return HazardCategory::None;
+            break;
     }
+
+    // Use Geometry Dash's object type as the fallback so that unknown
+    // hazard objects are covered by the "Other Hazards" setting.
+    if (object->m_objectType == GameObjectType::AnimatedHazard)
+        return HazardCategory::Animated;
+
+    if (object->m_objectType == GameObjectType::Hazard)
+        return HazardCategory::Other;
+
+    return HazardCategory::None;
 }
 
 bool isHazardCategoryEnabled(HazardCategory category) {
@@ -135,42 +137,73 @@ bool isHazardCategoryEnabled(HazardCategory category) {
     return false;
 }
 
-bool shouldPhaseDeath(GameObject* object) {
-    if (!ModMenu::isNoclipEnabled())
+bool isSolidObject(GameObject* object) {
+    if (!object)
+        return false;
+
+    switch (object->m_objectType) {
+        case GameObjectType::Solid:
+        case GameObjectType::Breakable:
+        case GameObjectType::CollisionObject:
+            return true;
+
+        default:
+            return false;
+    }
+}
+
+bool isSlopeObject(GameObject* object) {
+    return object && object->m_objectType == GameObjectType::Slope;
+}
+
+bool shouldIgnoreCollision(GameObject* object) {
+    if (!ModMenu::isNoclipEnabled() || !object)
         return false;
 
     auto category = classifyHazard(object);
 
-    // Falling / other non-object deaths are controlled by the Pits setting.
-    if (category == HazardCategory::None && !object) {
+    if (category != HazardCategory::None) {
+        return ModMenu::isPhaseThroughHazardsEnabled() &&
+               isHazardCategoryEnabled(category);
+    }
+
+    if (isSlopeObject(object))
+        return ModMenu::isPhaseThroughSlopesEnabled();
+
+    if (isSolidObject(object)) {
+        return ModMenu::isPhaseThroughBlocksEnabled() &&
+               ModMenu::isNoBlockTouchMode();
+    }
+
+    return false;
+}
+
+bool shouldPhaseDeath(GameObject* object) {
+    if (!ModMenu::isNoclipEnabled())
+        return false;
+
+    // Null death objects cover falling / out-of-bounds and other
+    // non-object deaths, which are controlled by the pit setting.
+    if (!object) {
         return ModMenu::isPhaseThroughHazardsEnabled() &&
                ModMenu::isHazardCategoryEnabled(3);
     }
 
-    // Known hazards are controlled exclusively by the hazard settings.
-    if (category != HazardCategory::None)
+    auto category = classifyHazard(object);
+
+    if (category != HazardCategory::None) {
         return ModMenu::isPhaseThroughHazardsEnabled() &&
                isHazardCategoryEnabled(category);
+    }
 
-    // Safe Block Touch prevents deaths caused by non-hazard level objects
-    // while still allowing their collision to happen.
-    return ModMenu::isPhaseThroughBlocksEnabled() &&
-           !ModMenu::isNoBlockTouchMode();
-}
+    // Safe Block Touch keeps normal solid collision but prevents a solid
+    // object from being passed to the actual death routine.
+    if (isSolidObject(object)) {
+        return ModMenu::isPhaseThroughBlocksEnabled() &&
+               !ModMenu::isNoBlockTouchMode();
+    }
 
-bool shouldIgnoreBlockCollision(GameObject* object) {
-    if (!ModMenu::isNoclipEnabled())
-        return false;
-
-    if (!ModMenu::isPhaseThroughBlocksEnabled())
-        return false;
-
-    if (!ModMenu::isNoBlockTouchMode())
-        return false;
-
-    // Never remove the collision path for a known hazard here. Hazard
-    // phasing is controlled separately by destroyPlayer.
-    return classifyHazard(object) == HazardCategory::None;
+    return false;
 }
 
 } // namespace
@@ -235,16 +268,36 @@ class $modify(ModUniversalPlayLayer, PlayLayer) {
 };
 
 class $modify(ModUniversalPlayerObject, PlayerObject) {
+    // Public collision entry point.
     bool collidedWithObject(
         float dt,
         GameObject* object,
         CCRect rect,
         bool skipCheck
     ) {
-        if (shouldIgnoreBlockCollision(object))
+        if (shouldIgnoreCollision(object))
             return false;
 
         return PlayerObject::collidedWithObject(
+            dt,
+            object,
+            rect,
+            skipCheck
+        );
+    }
+
+    // Lower-level collision path. Hooking only collidedWithObject()
+    // leaves this path able to process collisions independently.
+    bool collidedWithObjectInternal(
+        float dt,
+        GameObject* object,
+        CCRect rect,
+        bool skipCheck
+    ) {
+        if (shouldIgnoreCollision(object))
+            return false;
+
+        return PlayerObject::collidedWithObjectInternal(
             dt,
             object,
             rect,
