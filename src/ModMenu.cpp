@@ -526,7 +526,11 @@ CCLayerColor* createStatusPill(
         0.29f,
         active
             ? ccColor3B{18, 28, 24}
-            : ccColor3B{subdued ? 150 : 215, subdued ? 153 : 218, subdued ? 163 : 224}
+            : ccColor3B{
+                static_cast<GLubyte>(subdued ? 150 : 215),
+                static_cast<GLubyte>(subdued ? 153 : 218),
+                static_cast<GLubyte>(subdued ? 163 : 224)
+            }
     );
 
     if (label) {
