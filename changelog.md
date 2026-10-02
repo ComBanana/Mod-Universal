@@ -1,16 +1,23 @@
 # Changelog
 
-## 0.1.2 - 2026-09-17
+## 0.1.2
 
 ### Fixed
-- Noclip settings are now explicitly saved when F3 closes the ModUniversal menu, matching the menu's actual open/close path.
+- Fixed Noclip not working properly.
+- Fixed Noclip settings not saving when closing the ModUniversal menu.
+- Fixed problems with Escape and F3 closing the wrong menu level.
+- Fixed the mod menu being accessible while playing a level.
+- Fixed the mod menu being inaccessible while a level is paused.
 
-## 0.1.1 - 2026-09-17
+### Changed
+- Changed the default Noclip state from ON to OFF.
+
+## 0.1.1
 
 ### Fixed
 - Noclip setting changes are now saved immediately when changed from the custom ModUniversal menu, so closing and reopening the menu preserves the selected state.
 
-## 0.1.0 - 2026-09-17
+## 0.1.0
 
 ### Added
 - Customizable Noclip settings for block, slope, and hazard phasing.

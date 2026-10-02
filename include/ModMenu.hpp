@@ -14,8 +14,7 @@ protected:
     void createTabBar();
     void createContentPanel();
 
-    void onNoclip(CCObject*);
-    void onNoclipSettings(CCObject*);
+        void onNoclipSettings(CCObject*);
 
     void onTab(CCObject*);
     void onClose(CCObject* sender) override;

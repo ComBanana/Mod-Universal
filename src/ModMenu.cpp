@@ -15,36 +15,112 @@ CCLabelBMFont* createMenuLabel(char const* text, float scale = 0.45f) {
     return label;
 }
 
-CCMenuItemToggler* createCheckbox(
-    CCNode* parent,
-    CCObject* target,
-    SEL_MenuHandler selector,
-    bool state,
-    int tag,
-    CCPoint position
-) {
-    auto offSprite = CCSprite::createWithSpriteFrameName("GJ_checkOff_001.png");
-    auto onSprite = CCSprite::createWithSpriteFrameName("GJ_checkOn_001.png");
-
-    if (!offSprite || !onSprite)
-        return nullptr;
-
-    auto toggle = CCMenuItemToggler::create(
-        offSprite,
-        onSprite,
-        target,
-        selector
+CCSprite* createNoclipCheckboxSprite(bool enabled, float scale = 0.8f) {
+    auto sprite = CCSprite::createWithSpriteFrameName(
+        enabled
+            ? "GJ_checkOn_001.png"
+            : "GJ_checkOff_001.png"
     );
 
-    toggle->setTag(tag);
-    toggle->setPosition(position);
-    toggle->setScale(0.8f);
+    if (sprite)
+        sprite->setScale(scale);
 
-    if (state)
-        toggle->toggle(true);
+    return sprite;
+}
 
-    parent->addChild(toggle);
-    return toggle;
+void saveNoclipButtonSettings() {
+    if (auto result = Mod::get()->saveData(); !result) {
+        log::error(
+            "Failed to save Noclip button settings: {}",
+            result.unwrapErr()
+        );
+    }
+}
+
+void refreshNoclipCheckbox(
+    CCMenuItemSpriteExtra* button,
+    bool enabled
+) {
+    if (!button)
+        return;
+
+    auto sprite = typeinfo_cast<CCSprite*>(button->getNormalImage());
+
+    if (!sprite) {
+        log::error("Failed to find Noclip checkbox sprite");
+        return;
+    }
+
+    // Do not replace the menu item's normal image here. Cocos2d's
+    // setNormalImage() resets the replacement sprite's anchor point and
+    // content geometry, which makes the button visibly jump after a click.
+    // Changing the existing sprite frame keeps its position, anchor and
+    // scale intact.
+    auto frame = CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(
+        enabled
+            ? "GJ_checkOn_001.png"
+            : "GJ_checkOff_001.png"
+    );
+
+    if (!frame) {
+        log::error("Failed to find Noclip checkbox frame");
+        return;
+    }
+
+    sprite->setDisplayFrame(frame);
+}
+
+CCMenuItemSpriteExtra* createNoclipCheckbox(
+    CCNode* parent,
+    char const* settingKey,
+    CCPoint position
+) {
+    if (!parent || !settingKey)
+        return nullptr;
+
+    auto const key = std::string(settingKey);
+    auto initialState = Mod::get()->getSettingValue<bool>(key);
+
+    auto sprite = createNoclipCheckboxSprite(initialState);
+
+    if (!sprite)
+        return nullptr;
+
+    auto button = CCMenuItemExt::createSpriteExtra(
+        sprite,
+        [key](CCMenuItemSpriteExtra* item) {
+            auto* mod = Mod::get();
+
+            auto current = mod->getSettingValue<bool>(key);
+            auto next = !current;
+
+            if (key == "noclip-enabled") {
+                // Route the main Noclip control through the same ModMenu API
+                // used by the gameplay code rather than treating it as a
+                // generic UI-only boolean.
+                ModMenu::setNoclipEnabled(next);
+            }
+            else {
+                mod->setSettingValue<bool>(key, next);
+            }
+
+            refreshNoclipCheckbox(item, next);
+            saveNoclipButtonSettings();
+
+            log::info(
+                "Noclip setting '{}' changed to {}",
+                key,
+                next ? "ON" : "OFF"
+            );
+        }
+    );
+
+    if (!button)
+        return nullptr;
+
+    button->setPosition(position);
+    parent->addChild(button);
+    return button;
 }
 
 struct NestedPopupEntry {
@@ -135,12 +211,12 @@ protected:
         menu->setPosition({0.f, 0.f});
         m_mainLayer->addChild(menu);
 
-        addToggleRow(menu, "Spikes", "noclip-hazard-spikes", 0, 225.f);
-        addToggleRow(menu, "Ground / Edge Spikes", "noclip-hazard-ground-spikes", 1, 192.f);
-        addToggleRow(menu, "Sawblades", "noclip-hazard-saws", 2, 159.f);
-        addToggleRow(menu, "Pits", "noclip-hazard-pits", 3, 126.f);
-        addToggleRow(menu, "Animated Hazards", "noclip-hazard-animated", 4, 93.f);
-        addToggleRow(menu, "Other Hazards", "noclip-hazard-other", 5, 60.f);
+        addToggleRow(menu, "Spikes", "noclip-hazard-spikes", 225.f);
+        addToggleRow(menu, "Ground / Edge Spikes", "noclip-hazard-ground-spikes", 192.f);
+        addToggleRow(menu, "Sawblades", "noclip-hazard-saws", 159.f);
+        addToggleRow(menu, "Pits", "noclip-hazard-pits", 126.f);
+        addToggleRow(menu, "Animated Hazards", "noclip-hazard-animated", 93.f);
+        addToggleRow(menu, "Other Hazards", "noclip-hazard-other", 60.f);
 
         auto closeSprite = ButtonSprite::create(
             "Back",
@@ -165,7 +241,6 @@ protected:
         CCMenu* menu,
         char const* labelText,
         char const* settingKey,
-        int tag,
         float y
     ) {
         auto label = createMenuLabel(labelText, 0.42f);
@@ -173,36 +248,14 @@ protected:
         label->setPosition({65.f, y});
         m_mainLayer->addChild(label);
 
-        auto toggle = createCheckbox(
+        auto toggle = createNoclipCheckbox(
             menu,
-            this,
-            menu_selector(NoclipHazardPopup::onToggle),
-            Mod::get()->getSettingValue<bool>(settingKey),
-            tag,
+            settingKey,
             {345.f, y}
         );
 
         if (!toggle)
             log::warn("Could not create noclip hazard checkbox for {}", settingKey);
-    }
-
-    void onToggle(CCObject* sender) {
-        auto toggle = static_cast<CCMenuItemToggler*>(sender);
-        int tag = toggle->getTag();
-
-        static constexpr const char* keys[] = {
-            "noclip-hazard-spikes",
-            "noclip-hazard-ground-spikes",
-            "noclip-hazard-saws",
-            "noclip-hazard-pits",
-            "noclip-hazard-animated",
-            "noclip-hazard-other",
-        };
-
-        if (tag < 0 || tag >= 6)
-            return;
-
-        Mod::get()->setSettingValue<bool>(keys[tag], toggle->isToggled());
     }
 
     void onClosePopup(CCObject*) {
@@ -254,9 +307,9 @@ protected:
         menu->setPosition({0.f, 0.f});
         m_mainLayer->addChild(menu);
 
-        addToggleRow(menu, "Phase Through Blocks", "noclip-phase-blocks", 0, 220.f);
-        addToggleRow(menu, "Phase Through Slopes", "noclip-phase-slopes", 1, 188.f);
-        addToggleRow(menu, "Phase Through Hazards", "noclip-phase-hazards", 2, 156.f);
+        addToggleRow(menu, "Phase Through Blocks", "noclip-phase-blocks", 220.f);
+        addToggleRow(menu, "Phase Through Slopes", "noclip-phase-slopes", 188.f);
+        addToggleRow(menu, "Phase Through Hazards", "noclip-phase-hazards", 156.f);
 
         auto modeLabel = createMenuLabel("Block Collision Mode", 0.42f);
         modeLabel->setAnchorPoint({0.f, 0.5f});
@@ -312,11 +365,10 @@ protected:
         return true;
     }
 
-    CCMenuItemToggler* addToggleRow(
+    CCMenuItemSpriteExtra* addToggleRow(
         CCMenu* menu,
         char const* labelText,
         char const* settingKey,
-        int tag,
         float y
     ) {
         auto label = createMenuLabel(labelText, 0.44f);
@@ -324,12 +376,9 @@ protected:
         label->setPosition({55.f, y});
         m_mainLayer->addChild(label);
 
-        auto toggle = createCheckbox(
+        auto toggle = createNoclipCheckbox(
             menu,
-            this,
-            menu_selector(NoclipSettingsPopup::onToggle),
-            Mod::get()->getSettingValue<bool>(settingKey),
-            tag,
+            settingKey,
             {370.f, y}
         );
 
@@ -351,22 +400,6 @@ protected:
             "GJ_button_01.png",
             0.54f
         );
-    }
-
-    void onToggle(CCObject* sender) {
-        auto toggle = static_cast<CCMenuItemToggler*>(sender);
-        int tag = toggle->getTag();
-
-        static constexpr const char* keys[] = {
-            "noclip-phase-blocks",
-            "noclip-phase-slopes",
-            "noclip-phase-hazards",
-        };
-
-        if (tag < 0 || tag >= 3)
-            return;
-
-        Mod::get()->setSettingValue<bool>(keys[tag], toggle->isToggled());
     }
 
     void onBlockMode(CCObject*) {
@@ -645,12 +678,9 @@ void ModMenu::onTab(CCObject* sender) {
             log::warn("Could not load noclip settings gear sprite");
         }
 
-        auto noclipToggle = createCheckbox(
+        auto noclipToggle = createNoclipCheckbox(
             menu,
-            this,
-            menu_selector(ModMenu::onNoclip),
-            ModMenu::isNoclipEnabled(),
-            0,
+            "noclip-enabled",
             {305.f, 62.f}
         );
 
@@ -679,15 +709,6 @@ void ModMenu::onTab(CCObject* sender) {
     m_contentPanel->addChild(menu);
 }
 
-void ModMenu::onNoclip(CCObject* sender) {
-    auto toggle = static_cast<CCMenuItemToggler*>(sender);
-
-    if (!toggle)
-        return;
-
-    setNoclipEnabled(toggle->isToggled());
-}
-
 void ModMenu::onNoclipSettings(CCObject*) {
     openNoclipSettings();
 }
@@ -699,5 +720,5 @@ void ModMenu::openNoclipSettings() {
 
 void ModMenu::openNoclipHazardSettings() {
     if (auto popup = NoclipHazardPopup::create())
-        popup->show();
+        popup->showAndRegister();
 }
