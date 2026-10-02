@@ -24,7 +24,7 @@
 		"noclip-enabled": {
 			"type": "bool",
 			"name": "Noclip",
-			"default": true
+			"default": false
 		},
 		"noclip-phase-blocks": {
 			"type": "bool",
@@ -42,7 +42,7 @@
 		"noclip-phase-slopes": {
 			"type": "bool",
 			"name": "Phase Through Slopes",
-			"default": true,
+			"default": false,
 			"enable-if": "noclip-enabled"
 		},
 		"noclip-phase-hazards": {
