@@ -729,7 +729,10 @@ CCSize getResponsivePopupSize(float preferredWidth, float preferredHeight) {
 }
 
 bool isCompactMenu(float width) {
-    return width < 680.f;
+    // Keep the sidebar on normal desktop/tablet-sized windows. Switch to the
+    // compact top navigation only when there is not enough horizontal room
+    // for both a usable sidebar and a readable content area.
+    return width < 520.f;
 }
 
 struct CompactTabGrid {
