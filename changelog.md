@@ -1,67 +1,53 @@
-# Mod Universal — Changelog
+# Changelog
 
-All notable changes to Mod Universal are documented here, with the newest release at the top.
-
-## v0.2.0 — Menu Redesign & Noclip Improvements
+## 0.1.3
 
 ### Added
-- Added a universal **Set to Default** button.
-- Added an individual **Undo** button for modified settings.
+- Added a “Set to Default” button along with an individual button in each mod.
 
 ### Changed
-- Redesigned the ModUniversal menu with a sidebar navigation layout and larger content panels.
-- Refined menu hierarchy, spacing, headers, and section descriptions for a cleaner modern layout.
-- Refined the Noclip settings popups to match the new menu design.
-- Changed the default Noclip states.
-- Renamed several Noclip options to make their purpose clearer.
-- Temporarily disabled **Configure Hazards** while the hazard configuration system is being reworked.
+- Changed Noclip default states.
+- Changed some mod names to avoid confusion.
+- Temporarily disabled the “Configure Hazards” option in Noclip options.
 
 ### Fixed
-- Fixed a menu-closing bug that could cause the game to crash.
+- Fixed a bug involving closing menus that would crash the game.
 
----
+## 0.1.2
 
-## v0.1.2 — Noclip & Menu Stability
+### Fixed
+- Fixed Noclip not working properly.
+- Fixed Noclip settings not saving when closing the ModUniversal menu.
+- Fixed problems with Escape and F3 closing the wrong menu level.
+- Fixed the mod menu being accessible while playing a level.
+- Fixed the mod menu being inaccessible while a level is paused.
 
 ### Changed
 - Changed the default Noclip state from ON to OFF.
 
-### Fixed
-- Fixed Noclip not working properly.
-- Fixed Noclip settings not saving when the ModUniversal menu was closed.
-- Fixed Escape and F3 closing the wrong menu level.
-- Fixed the mod menu being accessible during active gameplay.
-- Fixed the mod menu being inaccessible while a level was paused.
-
----
-
-## v0.1.1 — Settings Persistence
+## 0.1.1
 
 ### Fixed
-- Fixed custom Noclip setting changes not being preserved after closing and reopening the ModUniversal menu.
+- Noclip setting changes are now saved immediately when changed from the custom ModUniversal menu, so closing and reopening the menu preserves the selected state.
 
----
-
-## v0.1.0 — Noclip System
+## 0.1.0
 
 ### Added
-- Added customizable block, slope, and hazard phasing.
-- Added **Standard** and **No Hitbox** block collision modes.
-- Added separate hazard categories for spikes, ground / edge spikes, sawblades, pits, animated hazards, and other hazards.
-- Added persistent Noclip settings through Geode's setting system.
-- Added a dedicated Noclip configuration popup.
+- Customizable Noclip settings for block, slope, and hazard phasing.
+- Safe Block Touch and No Block Touch collision modes.
+- Separate hazard categories for spikes, ground / edge spikes, sawblades, pits, animated hazards, and other hazards.
+- Persistent Noclip settings through Geode's setting system.
+- Dedicated Noclip configuration popup.
 
 ### Changed
-- Reworked the Player tab Noclip control into a checkbox with a settings button.
+- Reworked the Player tab Noclip control into a checkbox with a gear button for configuration.
 - Separated Noclip gameplay logic into its own source file.
 
 ### Fixed
-- Fixed regular level objects being incorrectly treated as hazards by Noclip.
-- Fixed block phasing being coupled to hazard protection.
+- Regular level objects are no longer incorrectly treated as hazards by Noclip.
+- Phase Through Blocks now controls block phasing independently from hazard protection.
 
----
-
-## v0.0.1 — Initial Release
+## 0.0.1
 
 ### Added
-- Created the ModUniversal mod template.
+- Created the mod template.
