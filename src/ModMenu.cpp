@@ -381,14 +381,6 @@ bool isCompactMenu(float width) {
     return width < 680.f;
 }
 
-void saveNoclipButtonSettings() {
-    if (auto result = Mod::get()->saveData(); !result) {
-        log::error(
-            "Failed to save Noclip button settings: {}",
-            result.unwrapErr()
-        );
-    }
-}
 
 struct NestedPopupEntry {
     WeakRef<Popup> popup;
