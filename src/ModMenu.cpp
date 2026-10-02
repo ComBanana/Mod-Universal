@@ -3,6 +3,7 @@
 #include <Geode/loader/Mod.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/ui/ScrollLayer.hpp>
+#include <Geode/ui/Scrollbar.hpp>
 
 #include <algorithm>
 #include <array>
