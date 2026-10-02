@@ -186,12 +186,12 @@ protected:
         menu->setPosition({0.f, 0.f});
         m_mainLayer->addChild(menu);
 
-        addToggleRow(menu, "Spikes", "noclip-hazard-spikes", 0, 225.f);
-        addToggleRow(menu, "Ground / Edge Spikes", "noclip-hazard-ground-spikes", 1, 192.f);
-        addToggleRow(menu, "Sawblades", "noclip-hazard-saws", 2, 159.f);
-        addToggleRow(menu, "Pits", "noclip-hazard-pits", 3, 126.f);
-        addToggleRow(menu, "Animated Hazards", "noclip-hazard-animated", 4, 93.f);
-        addToggleRow(menu, "Other Hazards", "noclip-hazard-other", 5, 60.f);
+        addToggleRow(menu, "Spikes", "noclip-hazard-spikes", 225.f);
+        addToggleRow(menu, "Ground / Edge Spikes", "noclip-hazard-ground-spikes", 192.f);
+        addToggleRow(menu, "Sawblades", "noclip-hazard-saws", 159.f);
+        addToggleRow(menu, "Pits", "noclip-hazard-pits", 126.f);
+        addToggleRow(menu, "Animated Hazards", "noclip-hazard-animated", 93.f);
+        addToggleRow(menu, "Other Hazards", "noclip-hazard-other", 60.f);
 
         auto closeSprite = ButtonSprite::create(
             "Back",
@@ -216,7 +216,6 @@ protected:
         CCMenu* menu,
         char const* labelText,
         char const* settingKey,
-        int tag,
         float y
     ) {
         auto label = createMenuLabel(labelText, 0.42f);
@@ -230,9 +229,7 @@ protected:
             {345.f, y}
         );
 
-        if (toggle)
-            toggle->setTag(tag);
-        else
+        if (!toggle)
             log::warn("Could not create noclip hazard checkbox for {}", settingKey);
     }
 
@@ -285,9 +282,9 @@ protected:
         menu->setPosition({0.f, 0.f});
         m_mainLayer->addChild(menu);
 
-        addToggleRow(menu, "Phase Through Blocks", "noclip-phase-blocks", 0, 220.f);
-        addToggleRow(menu, "Phase Through Slopes", "noclip-phase-slopes", 1, 188.f);
-        addToggleRow(menu, "Phase Through Hazards", "noclip-phase-hazards", 2, 156.f);
+        addToggleRow(menu, "Phase Through Blocks", "noclip-phase-blocks", 220.f);
+        addToggleRow(menu, "Phase Through Slopes", "noclip-phase-slopes", 188.f);
+        addToggleRow(menu, "Phase Through Hazards", "noclip-phase-hazards", 156.f);
 
         auto modeLabel = createMenuLabel("Block Collision Mode", 0.42f);
         modeLabel->setAnchorPoint({0.f, 0.5f});
@@ -347,7 +344,6 @@ protected:
         CCMenu* menu,
         char const* labelText,
         char const* settingKey,
-        int tag,
         float y
     ) {
         auto label = createMenuLabel(labelText, 0.44f);
@@ -361,9 +357,7 @@ protected:
             {370.f, y}
         );
 
-        if (toggle)
-            toggle->setTag(tag);
-        else
+        if (!toggle)
             log::warn("Could not create noclip checkbox for {}", settingKey);
 
         return toggle;
