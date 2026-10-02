@@ -1,5 +1,4 @@
 #include <Geode/Geode.hpp>
-#include <Geode/loader/SettingV3.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 
 #include "../include/ModMenu.hpp"
@@ -12,11 +11,6 @@ void saveNoclipSettings() {
     if (auto result = Mod::get()->saveData(); !result) {
         log::error("Failed to save Noclip settings: {}", result.unwrapErr());
     }
-}
-
-template <typename T>
-void saveNoclipSetting(T) {
-    saveNoclipSettings();
 }
 
 } // namespace
