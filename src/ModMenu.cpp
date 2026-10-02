@@ -476,6 +476,25 @@ protected:
         if (!Popup::init(popupSize.width, popupSize.height))
             return false;
 
+        if (m_bgSprite)
+            m_bgSprite->setVisible(false);
+
+        if (m_closeBtn) {
+            m_closeBtn->setPosition({
+                m_size.width - 20.f,
+                m_size.height - 20.f
+            });
+            m_closeBtn->setScale(0.68f);
+        }
+
+        createModernPanel(
+            m_mainLayer,
+            {m_size.width / 2.f, m_size.height / 2.f},
+            {m_size.width, m_size.height},
+            {18, 20, 25},
+            255
+        )->setZOrder(-100);
+
         auto title = createMenuLabel(
             "Spike Phasing",
             m_size.width < 440.f ? 0.56f : 0.66f
@@ -615,6 +634,25 @@ protected:
 
         if (!Popup::init(popupSize.width, popupSize.height))
             return false;
+
+        if (m_bgSprite)
+            m_bgSprite->setVisible(false);
+
+        if (m_closeBtn) {
+            m_closeBtn->setPosition({
+                m_size.width - 20.f,
+                m_size.height - 20.f
+            });
+            m_closeBtn->setScale(0.68f);
+        }
+
+        createModernPanel(
+            m_mainLayer,
+            {m_size.width / 2.f, m_size.height / 2.f},
+            {m_size.width, m_size.height},
+            {18, 20, 25},
+            255
+        )->setZOrder(-100);
 
         auto title = createMenuLabel(
             "Noclip",
@@ -887,6 +925,25 @@ bool ModMenu::init() {
 
     if (!Popup::init(popupSize.width, popupSize.height))
         return false;
+
+    if (m_bgSprite)
+        m_bgSprite->setVisible(false);
+
+    if (m_closeBtn) {
+        m_closeBtn->setPosition({
+            m_size.width - 22.f,
+            m_size.height - 22.f
+        });
+        m_closeBtn->setScale(0.72f);
+    }
+
+    createModernPanel(
+        m_mainLayer,
+        {m_size.width / 2.f, m_size.height / 2.f},
+        {m_size.width, m_size.height},
+        {18, 20, 25},
+        255
+    )->setZOrder(-100);
 
     createHeader();
     createTabBar();
