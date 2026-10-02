@@ -2,7 +2,7 @@
 
 All notable changes to Mod Universal are documented here, with the newest release at the top.
 
-## v0.1.3 — Noclip & Menu Improvements
+## v0.2.0 — Menu Redesign & Noclip Improvements
 
 ### Added
 - Added a universal **Set to Default** button.
