@@ -254,6 +254,7 @@ CCMenuItemSpriteExtra* createModernActionButton(
     if (!label)
         return nullptr;
 
+    label->setTag(7001);
     label->setPosition(size / 2.f);
     background->addChild(label);
 
@@ -1095,6 +1096,11 @@ void ModMenu::createTabBar() {
             label->setPosition({59.f, 21.f});
             background->addChild(label);
 
+            if (i == m_currentTab) {
+                background->setColor({75, 190, 138});
+                label->setColor({18, 28, 24});
+            }
+
             auto button = CCMenuItemSpriteExtra::create(
                 background,
                 this,
@@ -1141,6 +1147,11 @@ void ModMenu::createTabBar() {
             label->setTag(7002);
             label->setPosition({width / 2.f, height / 2.f});
             background->addChild(label);
+
+            if (i == m_currentTab) {
+                background->setColor({75, 190, 138});
+                label->setColor({18, 28, 24});
+            }
 
             auto button = CCMenuItemSpriteExtra::create(
                 background,
