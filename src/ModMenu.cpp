@@ -372,19 +372,6 @@ bool isCompactMenu(float width) {
     return width < 680.f;
 }
 
-CCSprite* createNoclipCheckboxSprite(bool enabled, float scale = 0.8f) {
-    auto sprite = CCSprite::createWithSpriteFrameName(
-        enabled
-            ? "GJ_checkOn_001.png"
-            : "GJ_checkOff_001.png"
-    );
-
-    if (sprite)
-        sprite->setScale(scale);
-
-    return sprite;
-}
-
 void saveNoclipButtonSettings() {
     if (auto result = Mod::get()->saveData(); !result) {
         log::error(
@@ -392,93 +379,6 @@ void saveNoclipButtonSettings() {
             result.unwrapErr()
         );
     }
-}
-
-void refreshNoclipCheckbox(
-    CCMenuItemSpriteExtra* button,
-    bool enabled
-) {
-    if (!button)
-        return;
-
-    auto sprite = typeinfo_cast<CCSprite*>(button->getNormalImage());
-
-    if (!sprite) {
-        log::error("Failed to find Noclip checkbox sprite");
-        return;
-    }
-
-    // Do not replace the menu item's normal image here. Cocos2d's
-    // setNormalImage() resets the replacement sprite's anchor point and
-    // content geometry, which makes the button visibly jump after a click.
-    // Changing the existing sprite frame keeps its position, anchor and
-    // scale intact.
-    auto frame = CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(
-        enabled
-            ? "GJ_checkOn_001.png"
-            : "GJ_checkOff_001.png"
-    );
-
-    if (!frame) {
-        log::error("Failed to find Noclip checkbox frame");
-        return;
-    }
-
-    sprite->setDisplayFrame(frame);
-}
-
-CCMenuItemSpriteExtra* createNoclipCheckbox(
-    CCNode* parent,
-    char const* settingKey,
-    CCPoint position
-) {
-    if (!parent || !settingKey)
-        return nullptr;
-
-    auto const key = std::string(settingKey);
-    auto initialState = Mod::get()->getSettingValue<bool>(key);
-
-    auto sprite = createNoclipCheckboxSprite(initialState);
-
-    if (!sprite)
-        return nullptr;
-
-    auto button = CCMenuItemExt::createSpriteExtra(
-        sprite,
-        [key](CCMenuItemSpriteExtra* item) {
-            auto* mod = Mod::get();
-
-            auto current = mod->getSettingValue<bool>(key);
-            auto next = !current;
-
-            if (key == "noclip-enabled") {
-                // Route the main Noclip control through the same ModMenu API
-                // used by the gameplay code rather than treating it as a
-                // generic UI-only boolean.
-                ModMenu::setNoclipEnabled(next);
-            }
-            else {
-                mod->setSettingValue<bool>(key, next);
-            }
-
-            refreshNoclipCheckbox(item, next);
-            saveNoclipButtonSettings();
-            updateNoclipDefaultButton();
-
-            log::info(
-                "Noclip setting '{}' changed to {}",
-                key,
-                next ? "ON" : "OFF"
-            );
-        }
-    );
-
-    if (!button)
-        return nullptr;
-
-    button->setPosition(position);
-    parent->addChild(button);
-    return button;
 }
 
 struct NestedPopupEntry {
@@ -1101,6 +1001,11 @@ void ModMenu::createTabBar() {
                 label->setColor({18, 28, 24});
             }
 
+            if (i == m_currentTab) {
+                background->setColor({75, 190, 138});
+                label->setColor({18, 28, 24});
+            }
+
             auto button = CCMenuItemSpriteExtra::create(
                 background,
                 this,
@@ -1147,6 +1052,11 @@ void ModMenu::createTabBar() {
             label->setTag(7002);
             label->setPosition({width / 2.f, height / 2.f});
             background->addChild(label);
+
+            if (i == m_currentTab) {
+                background->setColor({75, 190, 138});
+                label->setColor({18, 28, 24});
+            }
 
             if (i == m_currentTab) {
                 background->setColor({75, 190, 138});
