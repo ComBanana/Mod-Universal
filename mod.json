@@ -21,6 +21,10 @@
 			"default": "F3",
 			"category": "universal"
 		},
+		"noclip-title": {
+			"type": "title",
+			"name": "Noclip"
+		},
 		"noclip-enabled": {
 			"type": "bool",
 			"name": "Noclip",
