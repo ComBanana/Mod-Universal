@@ -104,6 +104,7 @@ CCMenuItemSpriteExtra* createHackDefaultButton(
         return nullptr;
 
     hitbox->setAnchorPoint({0.5f, 0.5f});
+    hitbox->ignoreAnchorPointForPosition(false);
     hitbox->setPosition({0.f, 0.f});
 
     sprite->setPosition(hitbox->getContentSize() / 2.f);
@@ -241,6 +242,7 @@ CCLayerColor* createModernPanel(
         return nullptr;
 
     panel->setAnchorPoint({0.5f, 0.5f});
+    panel->ignoreAnchorPointForPosition(false);
     panel->setPosition(center);
     parent->addChild(panel);
     return panel;
@@ -283,7 +285,9 @@ CCMenuItemSpriteExtra* createModernActionButton(
     if (!background)
         return nullptr;
 
+    background->ignoreAnchorPointForPosition(false);
     background->setAnchorPoint({0.5f, 0.5f});
+    background->ignoreAnchorPointForPosition(false);
 
     auto label = createMenuLabel(
         text,
@@ -336,7 +340,9 @@ CCMenuItemSpriteExtra* createModernToggle(
     if (!background)
         return nullptr;
 
+    background->ignoreAnchorPointForPosition(false);
     background->setAnchorPoint({0.5f, 0.5f});
+    background->ignoreAnchorPointForPosition(false);
 
     auto label = createMenuLabel(
         enabled ? "ON" : "OFF",
@@ -742,6 +748,7 @@ protected:
         );
 
         if (m_blockModeBackground) {
+            m_blockModeBackground->ignoreAnchorPointForPosition(false);
             m_blockModeBackground->setAnchorPoint({0.5f, 0.5f});
 
             m_blockModeLabel = createMenuLabel(
@@ -1062,6 +1069,7 @@ void ModMenu::createHeader() {
     );
 
     if (versionPanel) {
+        versionPanel->ignoreAnchorPointForPosition(false);
         versionPanel->setAnchorPoint({0.5f, 0.5f});
 
         float const rightReserve = m_closeBtn
@@ -1153,6 +1161,7 @@ void ModMenu::createTabBar() {
             if (!background)
                 continue;
 
+            background->ignoreAnchorPointForPosition(false);
             background->setAnchorPoint({0.5f, 0.5f});
 
             auto label = createMenuLabel(
@@ -1548,6 +1557,7 @@ void ModMenu::onTab(CCObject* sender) {
 
             if (gearHitbox) {
                 gearHitbox->setAnchorPoint({0.5f, 0.5f});
+                gearHitbox->ignoreAnchorPointForPosition(false);
                 gearHitbox->setPosition({0.f, 0.f});
                 gearSprite->setPosition(
                     gearHitbox->getContentSize() / 2.f
