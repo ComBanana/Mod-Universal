@@ -32,7 +32,7 @@
 		},
 		"noclip-phase-blocks": {
 			"type": "bool",
-			"name": "Phase Through Blocks",
+			"name": "Block Phasing",
 			"default": true,
 			"enable-if": "noclip-enabled"
 		},
@@ -45,13 +45,13 @@
 		},
 		"noclip-phase-slopes": {
 			"type": "bool",
-			"name": "Phase Through Slopes",
+			"name": "Slope Phasing",
 			"default": false,
 			"enable-if": "noclip-enabled"
 		},
 		"noclip-phase-hazards": {
 			"type": "bool",
-			"name": "Phase Through Hazards",
+			"name": "Spike Phasing",
 			"default": true,
 			"enable-if": "noclip-enabled"
 		},
