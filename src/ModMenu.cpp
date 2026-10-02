@@ -111,10 +111,29 @@ CCMenuItemSpriteExtra* createHackDefaultButton(
 }
 
 WeakRef<CCMenuItemSpriteExtra> s_noclipDefaultButton;
+WeakRef<CCMenuItemSpriteExtra> s_noclipSettingsButton;
+WeakRef<CCMenuItemSpriteExtra> s_noclipCheckboxButton;
+
+void updateNoclipRowLayout() {
+    bool const hasNoclipChanges = !areSettingsAtDefault(NoclipSettingKeys);
+
+    if (auto button = s_noclipDefaultButton.lock())
+        button->setVisible(hasNoclipChanges);
+
+    if (auto button = s_noclipSettingsButton.lock()) {
+        button->setPosition({
+            hasNoclipChanges ? 235.f : 275.f,
+            62.f
+        });
+    }
+
+    if (auto button = s_noclipCheckboxButton.lock()) {
+        button->setPosition({330.f, 62.f});
+    }
+}
 
 void updateNoclipDefaultButton() {
-    if (auto button = s_noclipDefaultButton.lock())
-        button->setVisible(!areSettingsAtDefault(NoclipSettingKeys));
+    updateNoclipRowLayout();
 }
 
 CCLabelBMFont* createMenuLabel(char const* text, float scale = 0.45f) {
@@ -826,6 +845,7 @@ void ModMenu::onTab(CCObject* sender) {
                 hasNoclipChanges ? 235.f : 275.f,
                 62.f
             });
+            s_noclipSettingsButton = gearButton;
             menu->addChild(gearButton);
         }
         else {
@@ -835,11 +855,9 @@ void ModMenu::onTab(CCObject* sender) {
         auto noclipToggle = createNoclipCheckbox(
             menu,
             "noclip-enabled",
-            {
-                hasNoclipChanges ? 330.f : 330.f,
-                62.f
-            }
+            {330.f, 62.f}
         );
+        s_noclipCheckboxButton = noclipToggle;
 
         if (!noclipToggle)
             log::warn("Could not create noclip checkbox");
