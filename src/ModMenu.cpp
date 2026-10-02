@@ -67,7 +67,7 @@ void refreshNoclipCheckbox(
         return;
     }
 
-    sprite->setSpriteFrame(frame);
+    sprite->setDisplayFrame(frame);
 }
 
 CCMenuItemSpriteExtra* createNoclipCheckbox(
