@@ -24,12 +24,12 @@
 		"noclip-enabled": {
 			"type": "bool",
 			"name": "Noclip",
-			"default": false
+			"default": true
 		},
 		"noclip-phase-blocks": {
 			"type": "bool",
 			"name": "Phase Through Blocks",
-			"default": false,
+			"default": true,
 			"enable-if": "noclip-enabled"
 		},
 		"noclip-block-mode": {
@@ -42,49 +42,49 @@
 		"noclip-phase-slopes": {
 			"type": "bool",
 			"name": "Phase Through Slopes",
-			"default": false,
+			"default": true,
 			"enable-if": "noclip-enabled"
 		},
 		"noclip-phase-hazards": {
 			"type": "bool",
 			"name": "Phase Through Hazards",
-			"default": false,
+			"default": true,
 			"enable-if": "noclip-enabled"
 		},
 		"noclip-hazard-spikes": {
 			"type": "bool",
 			"name": "Spikes",
-			"default": false,
+			"default": true,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		},
 		"noclip-hazard-ground-spikes": {
 			"type": "bool",
 			"name": "Ground / Edge Spikes",
-			"default": false,
+			"default": true,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		},
 		"noclip-hazard-saws": {
 			"type": "bool",
 			"name": "Sawblades",
-			"default": false,
+			"default": true,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		},
 		"noclip-hazard-pits": {
 			"type": "bool",
 			"name": "Pits",
-			"default": false,
+			"default": true,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		},
 		"noclip-hazard-animated": {
 			"type": "bool",
 			"name": "Animated Hazards",
-			"default": false,
+			"default": true,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		},
 		"noclip-hazard-other": {
 			"type": "bool",
 			"name": "Other Hazards",
-			"default": false,
+			"default": true,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		}
 	},
