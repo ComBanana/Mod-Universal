@@ -4,10 +4,64 @@
 #include <Geode/modify/PlayLayer.hpp>
 
 #include <algorithm>
+#include <filesystem>
 #include <functional>
 #include <vector>
 
 namespace {
+
+constexpr char const* NoclipSettingKeys[] = {
+    "noclip-enabled",
+    "noclip-phase-blocks",
+    "noclip-block-mode",
+    "noclip-phase-slopes",
+    "noclip-phase-hazards",
+    "noclip-hazard-spikes",
+    "noclip-hazard-ground-spikes",
+    "noclip-hazard-saws",
+    "noclip-hazard-pits",
+    "noclip-hazard-animated",
+    "noclip-hazard-other",
+};
+
+void ensureNoclipSettingsFile() {
+    auto const path = Mod::get()->getSaveDir() / "settings.json";
+    std::error_code ec;
+
+    if (std::filesystem::exists(path, ec))
+        return;
+
+    if (ec) {
+        log::error(
+            "Failed to check Noclip settings file: {}",
+            ec.message()
+        );
+        return;
+    }
+
+    if (auto result = Mod::get()->saveData(); !result) {
+        log::error(
+            "Failed to create default Noclip settings file: {}",
+            result.unwrapErr()
+        );
+    }
+}
+
+void resetNoclipSettingsToDefault() {
+    for (auto const* key : NoclipSettingKeys) {
+        if (auto setting = Mod::get()->getSetting(key))
+            setting->reset();
+        else
+            log::warn("Could not find Noclip setting '{}'", key);
+    }
+
+    if (auto result = Mod::get()->saveData(); !result) {
+        log::error(
+            "Failed to save reset Noclip settings: {}",
+            result.unwrapErr()
+        );
+    }
+}
 
 CCLabelBMFont* createMenuLabel(char const* text, float scale = 0.45f) {
     auto label = CCLabelBMFont::create(text, "goldFont.fnt");
@@ -299,6 +353,9 @@ public:
 class NoclipSettingsPopup : public Popup {
 protected:
     ButtonSprite* m_blockModeButton = nullptr;
+    CCMenuItemSpriteExtra* m_phaseBlocksToggle = nullptr;
+    CCMenuItemSpriteExtra* m_phaseSlopesToggle = nullptr;
+    CCMenuItemSpriteExtra* m_phaseHazardsToggle = nullptr;
 
     bool init() {
         if (!Popup::init(440.f, 285.f))
@@ -357,6 +414,21 @@ protected:
         info->setOpacity(180);
         m_mainLayer->addChild(info);
 
+        auto resetSprite = ButtonSprite::create(
+            "Set to Default",
+            "goldFont.fnt",
+            "GJ_button_01.png",
+            0.55f
+        );
+
+        auto resetButton = CCMenuItemSpriteExtra::create(
+            resetSprite,
+            this,
+            menu_selector(NoclipSettingsPopup::onResetToDefault)
+        );
+        resetButton->setPosition({350.f, 25.f});
+        menu->addChild(resetButton);
+
         auto closeSprite = ButtonSprite::create(
             "Back",
             "goldFont.fnt",
@@ -392,8 +464,17 @@ protected:
             {370.f, y}
         );
 
-        if (!toggle)
+        if (!toggle) {
             log::warn("Could not create noclip checkbox for {}", settingKey);
+            return nullptr;
+        }
+
+        if (std::string_view(settingKey) == "noclip-phase-blocks")
+            m_phaseBlocksToggle = toggle;
+        else if (std::string_view(settingKey) == "noclip-phase-slopes")
+            m_phaseSlopesToggle = toggle;
+        else if (std::string_view(settingKey) == "noclip-phase-hazards")
+            m_phaseHazardsToggle = toggle;
 
         return toggle;
     }
@@ -427,6 +508,45 @@ protected:
                     : "Safe Block Touch"
             );
         }
+    }
+
+    void onResetToDefault(CCObject*) {
+        createQuickPopup(
+            "Set to Default",
+            "This will change all previously changed <cr>Noclip settings</c> "
+            "back to their <cy>default values</c>. This cannot be undone.",
+            "Cancel",
+            "Reset",
+            [this](auto, bool btn2) {
+                if (!btn2)
+                    return;
+
+                resetNoclipSettingsToDefault();
+
+                if (m_phaseBlocksToggle) {
+                    refreshNoclipCheckbox(
+                        m_phaseBlocksToggle,
+                        Mod::get()->getSettingValue<bool>("noclip-phase-blocks")
+                    );
+                }
+
+                if (m_phaseSlopesToggle) {
+                    refreshNoclipCheckbox(
+                        m_phaseSlopesToggle,
+                        Mod::get()->getSettingValue<bool>("noclip-phase-slopes")
+                    );
+                }
+
+                if (m_phaseHazardsToggle) {
+                    refreshNoclipCheckbox(
+                        m_phaseHazardsToggle,
+                        Mod::get()->getSettingValue<bool>("noclip-phase-hazards")
+                    );
+                }
+
+                ModMenu::refreshPlayerTab();
+            }
+        );
     }
 
     void onHazardSettings(CCObject*) {
@@ -470,6 +590,8 @@ public:
 } // namespace
 
 bool ModMenu::init() {
+    ensureNoclipSettingsFile();
+
     if (!Popup::init(460.f, 235.f))
         return false;
 
@@ -721,6 +843,11 @@ void ModMenu::onTab(CCObject* sender) {
 
 void ModMenu::onNoclipSettings(CCObject*) {
     openNoclipSettings();
+}
+
+void ModMenu::refreshPlayerTab() {
+    if (s_instance && s_instance->m_contentPanel)
+        s_instance->onTab(nullptr);
 }
 
 void ModMenu::openNoclipSettings() {
