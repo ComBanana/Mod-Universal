@@ -1001,11 +1001,6 @@ void ModMenu::createTabBar() {
                 label->setColor({18, 28, 24});
             }
 
-            if (i == m_currentTab) {
-                background->setColor({75, 190, 138});
-                label->setColor({18, 28, 24});
-            }
-
             auto button = CCMenuItemSpriteExtra::create(
                 background,
                 this,
