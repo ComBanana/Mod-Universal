@@ -177,16 +177,13 @@ CCLabelBMFont* createMutedMenuLabel(char const* text, float scale = 0.34f) {
 CCSize getResponsivePopupSize(float preferredWidth, float preferredHeight) {
     auto const screen = CCDirector::sharedDirector()->getWinSize();
 
-    float const width = std::max(
-        260.f,
-        std::min(preferredWidth, screen.width - 24.f)
-    );
-    float const height = std::max(
-        200.f,
-        std::min(preferredHeight, screen.height - 24.f)
-    );
+    float const availableWidth = std::max(220.f, screen.width - 24.f);
+    float const availableHeight = std::max(180.f, screen.height - 24.f);
 
-    return {width, height};
+    return {
+        std::min(preferredWidth, availableWidth),
+        std::min(preferredHeight, availableHeight)
+    };
 }
 
 bool isCompactMenu(float width) {
@@ -726,7 +723,11 @@ public:
 bool ModMenu::init() {
     ensureSettingsFile();
 
-    auto const popupSize = getResponsivePopupSize(760.f, 470.f);
+    auto const screen = CCDirector::sharedDirector()->getWinSize();
+    float const preferredHeight =
+        screen.width < screen.height ? 560.f : 470.f;
+
+    auto const popupSize = getResponsivePopupSize(760.f, preferredHeight);
 
     if (!Popup::init(popupSize.width, popupSize.height))
         return false;
@@ -953,9 +954,10 @@ void ModMenu::createContentPanel() {
     bool const compact = isCompactMenu(m_size.width);
 
     float const left = compact ? 18.f : 166.f;
-    float const top = compact
-        ? (m_size.width < 450.f ? 142.f : 128.f)
-        : m_size.height - 82.f;
+    float const reservedTop = compact
+        ? (m_size.width < 450.f ? 154.f : 126.f)
+        : 82.f;
+    float const top = m_size.height - reservedTop;
 
     m_contentPanel = CCNode::create();
     m_contentPanel->setContentSize({
