@@ -92,21 +92,27 @@ CCMenuItemSpriteExtra* createHackDefaultButton(
     sprite->setAnchorPoint({0.5f, 0.5f});
     sprite->setScale(0.8f);
 
-    // Keep the atlas sprite inside a fixed-size local container. This makes
-    // the icon's visual position independent of the sprite frame's bounds.
-    auto iconContainer = CCLayer::create();
-    if (!iconContainer)
+    // Use the same kind of node hierarchy as the working modern buttons:
+    // a fixed-size image container with the atlas texture centered inside.
+    auto hitbox = CCLayerColor::create(
+        {255, 255, 255, 0},
+        32.f,
+        32.f
+    );
+
+    if (!hitbox)
         return nullptr;
 
-    iconContainer->setContentSize({32.f, 32.f});
-    iconContainer->setAnchorPoint({0.5f, 0.5f});
-    sprite->setPosition(iconContainer->getContentSize() / 2.f);
-    iconContainer->addChild(sprite);
+    hitbox->setAnchorPoint({0.5f, 0.5f});
+    hitbox->setPosition({0.f, 0.f});
+
+    sprite->setPosition(hitbox->getContentSize() / 2.f);
+    hitbox->addChild(sprite);
 
     auto const showButton = !areSettingsAtDefault(settingKeys);
 
     auto button = CCMenuItemExt::createSpriteExtra(
-        iconContainer,
+        hitbox,
         [keys = std::move(settingKeys)](CCMenuItemSpriteExtra*) {
             resetSettingsToDefault(keys);
             ModMenu::refreshCurrentTab();
@@ -116,13 +122,11 @@ CCMenuItemSpriteExtra* createHackDefaultButton(
     if (!button)
         return nullptr;
 
-    button->setAnchorPoint({0.5f, 0.5f});
     button->setPosition(position);
     button->setVisible(showButton);
     menu->addChild(button);
     return button;
 }
-
 WeakRef<CCMenuItemSpriteExtra> s_noclipDefaultButton;
 WeakRef<CCMenuItemSpriteExtra> s_noclipSettingsButton;
 WeakRef<CCMenuItemSpriteExtra> s_noclipCheckboxButton;
@@ -1392,17 +1396,22 @@ void ModMenu::onTab(CCObject* sender) {
             gearSprite->setAnchorPoint({0.5f, 0.5f});
             gearSprite->setScale(0.72f);
 
-            auto gearContainer = CCLayer::create();
-            if (gearContainer) {
-                gearContainer->setContentSize({32.f, 32.f});
-                gearContainer->setAnchorPoint({0.5f, 0.5f});
+            auto gearHitbox = CCLayerColor::create(
+                {255, 255, 255, 0},
+                32.f,
+                32.f
+            );
+
+            if (gearHitbox) {
+                gearHitbox->setAnchorPoint({0.5f, 0.5f});
+                gearHitbox->setPosition({0.f, 0.f});
                 gearSprite->setPosition(
-                    gearContainer->getContentSize() / 2.f
+                    gearHitbox->getContentSize() / 2.f
                 );
-                gearContainer->addChild(gearSprite);
+                gearHitbox->addChild(gearSprite);
 
                 gearButton = CCMenuItemSpriteExtra::create(
-                    gearContainer,
+                    gearHitbox,
                     this,
                     menu_selector(ModMenu::onNoclipSettings)
                 );
