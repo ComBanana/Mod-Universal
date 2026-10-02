@@ -1,6 +1,7 @@
 #include "../include/ModMenu.hpp"
 
 #include <Geode/loader/Mod.hpp>
+#include <Geode/modify/PlayLayer.hpp>
 
 namespace {
 
@@ -133,6 +134,10 @@ protected:
 
     void onClosePopup(CCObject*) {
         this->onClose(nullptr);
+    }
+
+    void keyBackClicked() override {
+        onClosePopup(nullptr);
     }
 
 public:
@@ -306,6 +311,10 @@ protected:
         this->onClose(nullptr);
     }
 
+    void keyBackClicked() override {
+        onClosePopup(nullptr);
+    }
+
 public:
     static NoclipSettingsPopup* create() {
         auto ret = new NoclipSettingsPopup();
@@ -450,6 +459,10 @@ ModMenu* ModMenu::create() {
 }
 
 void ModMenu::toggle() {
+    // The ModUniversal menu is intentionally unavailable during gameplay.
+    if (PlayLayer::get())
+        return;
+
     if (s_instance) {
         s_instance->removeFromParentAndCleanup(true);
         s_instance = nullptr;
