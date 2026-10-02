@@ -4,6 +4,7 @@
 #include <Geode/modify/PlayLayer.hpp>
 
 #include <algorithm>
+#include <cstring>
 #include <filesystem>
 #include <functional>
 #include <vector>
@@ -404,6 +405,44 @@ CCMenuItemSpriteExtra* createModernToggle(
 
             saveNoclipButtonSettings();
             updateNoclipDefaultButton();
+
+            auto parentMenu = item->getParent();
+            auto content = parentMenu ? parentMenu->getParent() : nullptr;
+            if (content) {
+                for (auto* child : CCArrayExt<CCNode*>(content->getChildren())) {
+                    if (child->getTag() != 7100)
+                        continue;
+
+                    auto pill = child->getChildByTag(7101);
+                    auto stateLabelNode = pill
+                        ? pill->getChildByTag(7102)
+                        : nullptr;
+
+                    auto stateLabel =
+                        typeinfo_cast<CCLabelBMFont*>(stateLabelNode);
+                    auto statePill =
+                        typeinfo_cast<CCLayerColor*>(pill);
+
+                    if (stateLabel) {
+                        stateLabel->setString(next ? "ON" : "OFF");
+                        stateLabel->setColor(
+                            next
+                                ? ccColor3B{18, 28, 24}
+                                : ccColor3B{215, 218, 224}
+                        );
+                    }
+
+                    if (statePill) {
+                        statePill->setColor(
+                            next
+                                ? ccColor3B{75, 190, 138}
+                                : ccColor3B{52, 56, 66}
+                        );
+                    }
+
+                    break;
+                }
+            }
         }
     );
 
@@ -480,6 +519,7 @@ CCLayerColor* createStatusPill(
     pill->ignoreAnchorPointForPosition(false);
     pill->setAnchorPoint({0.5f, 0.5f});
     pill->setPosition(center);
+    pill->setTag(7101);
 
     auto label = createMenuLabel(
         text,
@@ -490,6 +530,7 @@ CCLayerColor* createStatusPill(
     );
 
     if (label) {
+        label->setTag(7102);
         label->setPosition(pill->getContentSize() / 2.f);
         pill->addChild(label);
     }
@@ -523,6 +564,7 @@ CCLayerColor* createFeatureCard(
     card->ignoreAnchorPointForPosition(false);
     card->setAnchorPoint({0.5f, 0.5f});
     card->setPosition(center);
+    card->setTag(7100);
 
     auto accent = CCLayerColor::create(
         active
