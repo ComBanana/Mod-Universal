@@ -113,30 +113,48 @@ CCMenuItemSpriteExtra* createHackDefaultButton(
 WeakRef<CCMenuItemSpriteExtra> s_noclipDefaultButton;
 WeakRef<CCMenuItemSpriteExtra> s_noclipSettingsButton;
 WeakRef<CCMenuItemSpriteExtra> s_noclipCheckboxButton;
-
-constexpr float NoclipRowY = 166.f;
-constexpr float NoclipUndoX = 332.f;
-constexpr float NoclipGearXWithUndo = 374.f;
-constexpr float NoclipGearXWithoutUndo = 416.f;
-constexpr float NoclipCheckboxX = 462.f;
+float s_noclipRowY = 0.f;
 
 void updateNoclipRowLayout() {
     bool const hasNoclipChanges = !areSettingsAtDefault(NoclipSettingKeys);
 
-    if (auto button = s_noclipDefaultButton.lock()) {
-        button->setVisible(hasNoclipChanges);
-        button->setPosition({NoclipUndoX, NoclipRowY});
+    auto defaultButton = s_noclipDefaultButton.lock();
+    auto settingsButton = s_noclipSettingsButton.lock();
+    auto checkboxButton = s_noclipCheckboxButton.lock();
+
+    CCNode* anchorNode =
+        defaultButton ? static_cast<CCNode*>(defaultButton) :
+        settingsButton ? static_cast<CCNode*>(settingsButton) :
+        checkboxButton ? static_cast<CCNode*>(checkboxButton) :
+        nullptr;
+
+    if (!anchorNode)
+        return;
+
+    auto menu = anchorNode->getParent();
+    auto panel = menu ? menu->getParent() : nullptr;
+    if (!panel)
+        return;
+
+    float const right = panel->getContentSize().width - 30.f;
+    float const checkboxX = right;
+    float const gearX = right - 46.f;
+    float const undoX = right - 92.f;
+
+    if (defaultButton) {
+        defaultButton->setVisible(hasNoclipChanges);
+        defaultButton->setPosition({undoX, s_noclipRowY});
     }
 
-    if (auto button = s_noclipSettingsButton.lock()) {
-        button->setPosition({
-            hasNoclipChanges ? NoclipGearXWithUndo : NoclipGearXWithoutUndo,
-            NoclipRowY
+    if (settingsButton) {
+        settingsButton->setPosition({
+            hasNoclipChanges ? gearX : undoX,
+            s_noclipRowY
         });
     }
 
-    if (auto button = s_noclipCheckboxButton.lock())
-        button->setPosition({NoclipCheckboxX, NoclipRowY});
+    if (checkboxButton)
+        checkboxButton->setPosition({checkboxX, s_noclipRowY});
 }
 
 void updateNoclipDefaultButton() {
@@ -150,18 +168,37 @@ CCLabelBMFont* createMenuLabel(char const* text, float scale = 0.45f) {
 }
 
 CCLabelBMFont* createMutedMenuLabel(char const* text, float scale = 0.34f) {
-    auto label = CCLabelBMFont::create(text, "goldFont.fnt");
+    auto label = CCLabelBMFont::create(text, "chatFont.fnt");
     label->setScale(scale);
-    label->setOpacity(175);
+    label->setOpacity(180);
     return label;
+}
+
+CCSize getResponsivePopupSize(float preferredWidth, float preferredHeight) {
+    auto const screen = CCDirector::sharedDirector()->getWinSize();
+
+    float const width = std::max(
+        260.f,
+        std::min(preferredWidth, screen.width - 24.f)
+    );
+    float const height = std::max(
+        200.f,
+        std::min(preferredHeight, screen.height - 24.f)
+    );
+
+    return {width, height};
+}
+
+bool isCompactMenu(float width) {
+    return width < 650.f;
 }
 
 extension::CCScale9Sprite* createModernPanel(
     CCNode* parent,
     CCPoint center,
     CCSize size,
-    ccColor3B color = {45, 45, 52},
-    GLubyte opacity = 220
+    ccColor3B color = {43, 43, 50},
+    GLubyte opacity = 238
 ) {
     if (!parent)
         return nullptr;
@@ -187,8 +224,8 @@ void addModernDivider(CCNode* parent, CCPoint position, float width) {
         return;
 
     divider->setContentSize({width, 1.5f});
-    divider->setColor({70, 70, 78});
-    divider->setOpacity(170);
+    divider->setColor({78, 78, 88});
+    divider->setOpacity(190);
     divider->setPosition(position);
     parent->addChild(divider);
 }
@@ -379,7 +416,9 @@ void saveMenuSettings() {
 class NoclipHazardPopup : public Popup {
 protected:
     bool init() {
-        if (!Popup::init(520.f, 360.f))
+        auto const popupSize = getResponsivePopupSize(540.f, 380.f);
+
+        if (!Popup::init(popupSize.width, popupSize.height))
             return false;
 
         auto title = createMenuLabel("Spike Phasing", 0.68f);
@@ -397,22 +436,28 @@ protected:
 
         createModernPanel(
             m_mainLayer,
-            {m_size.width / 2.f, 170.f},
-            {m_size.width - 36.f, 210.f},
+            {m_size.width / 2.f, (m_size.height - 20.f) / 2.f},
+            {m_size.width - 32.f, m_size.height - 116.f},
             {38, 38, 45},
-            235
+            238
         );
 
         auto menu = CCMenu::create();
         menu->setPosition({0.f, 0.f});
         m_mainLayer->addChild(menu);
 
-        addToggleRow(menu, "Spikes", "noclip-hazard-spikes", 246.f);
-        addToggleRow(menu, "Ground / Edge Spikes", "noclip-hazard-ground-spikes", 213.f);
-        addToggleRow(menu, "Sawblades", "noclip-hazard-saws", 180.f);
-        addToggleRow(menu, "Pits", "noclip-hazard-pits", 147.f);
-        addToggleRow(menu, "Animated Hazards", "noclip-hazard-animated", 114.f);
-        addToggleRow(menu, "Other Hazards", "noclip-hazard-other", 81.f);
+        float const topY = m_size.height - 101.f;
+        float const gap = std::max(
+            28.f,
+            std::min(35.f, (m_size.height - 156.f) / 5.f)
+        );
+
+        addToggleRow(menu, "Spikes", "noclip-hazard-spikes", topY);
+        addToggleRow(menu, "Ground / Edge Spikes", "noclip-hazard-ground-spikes", topY - gap);
+        addToggleRow(menu, "Sawblades", "noclip-hazard-saws", topY - gap * 2.f);
+        addToggleRow(menu, "Pits", "noclip-hazard-pits", topY - gap * 3.f);
+        addToggleRow(menu, "Animated Hazards", "noclip-hazard-animated", topY - gap * 4.f);
+        addToggleRow(menu, "Other Hazards", "noclip-hazard-other", topY - gap * 5.f);
 
         auto closeSprite = ButtonSprite::create(
             "Back",
@@ -439,13 +484,13 @@ protected:
     ) {
         auto label = createMenuLabel(labelText, 0.42f);
         label->setAnchorPoint({0.f, 0.5f});
-        label->setPosition({55.f, y});
+        label->setPosition({50.f, y});
         m_mainLayer->addChild(label);
 
         auto toggle = createNoclipCheckbox(
             menu,
             settingKey,
-            {448.f, y}
+            {m_size.width - 56.f, y}
         );
 
         if (!toggle)
@@ -490,26 +535,28 @@ protected:
     ButtonSprite* m_blockModeButton = nullptr;
 
     bool init() {
-        if (!Popup::init(520.f, 340.f))
+        auto const popupSize = getResponsivePopupSize(560.f, 380.f);
+
+        if (!Popup::init(popupSize.width, popupSize.height))
             return false;
 
-        auto title = createMenuLabel("Noclip", 0.68f);
-        title->setPosition({36.f, m_size.height - 34.f});
+        auto title = createMenuLabel("Noclip", 0.64f);
+        title->setPosition({26.f, m_size.height - 31.f});
         title->setAnchorPoint({0.f, 0.5f});
         m_mainLayer->addChild(title);
 
         auto subtitle = createMutedMenuLabel(
             "Configure how Noclip interacts with the level.",
-            0.34f
+            0.30f
         );
-        subtitle->setPosition({36.f, m_size.height - 58.f});
+        subtitle->setPosition({26.f, m_size.height - 53.f});
         subtitle->setAnchorPoint({0.f, 0.5f});
         m_mainLayer->addChild(subtitle);
 
         createModernPanel(
             m_mainLayer,
-            {m_size.width / 2.f, 199.f},
-            {m_size.width - 36.f, 188.f},
+            {m_size.width / 2.f, (m_size.height - 20.f) / 2.f},
+            {m_size.width - 32.f, m_size.height - 116.f},
             {38, 38, 45},
             235
         );
@@ -518,9 +565,10 @@ protected:
         menu->setPosition({0.f, 0.f});
         m_mainLayer->addChild(menu);
 
-        addToggleRow(menu, "Block Phasing", "noclip-phase-blocks", 253.f);
-        addToggleRow(menu, "Slope Phasing", "noclip-phase-slopes", 220.f);
-        addToggleRow(menu, "Spike Phasing", "noclip-phase-hazards", 187.f);
+        float const rowY = m_size.height - 101.f;
+        addToggleRow(menu, "Block Phasing", "noclip-phase-blocks", rowY);
+        addToggleRow(menu, "Slope Phasing", "noclip-phase-slopes", rowY - 37.f);
+        addToggleRow(menu, "Spike Phasing", "noclip-phase-hazards", rowY - 74.f);
 
         auto modeLabel = createMenuLabel("Block Collision", 0.42f);
         modeLabel->setAnchorPoint({0.f, 0.5f});
@@ -587,7 +635,7 @@ protected:
     ) {
         auto label = createMenuLabel(labelText, 0.44f);
         label->setAnchorPoint({0.f, 0.5f});
-        label->setPosition({55.f, y});
+        label->setPosition({50.f, y});
         m_mainLayer->addChild(label);
 
         auto toggle = createNoclipCheckbox(
@@ -678,7 +726,9 @@ public:
 bool ModMenu::init() {
     ensureSettingsFile();
 
-    if (!Popup::init(680.f, 400.f))
+    auto const popupSize = getResponsivePopupSize(760.f, 470.f);
+
+    if (!Popup::init(popupSize.width, popupSize.height))
         return false;
 
     createHeader();
@@ -689,7 +739,7 @@ bool ModMenu::init() {
         "Set to Default",
         "goldFont.fnt",
         "GJ_button_01.png",
-        0.48f
+        0.44f
     );
 
     if (resetSprite) {
@@ -698,7 +748,10 @@ bool ModMenu::init() {
             this,
             menu_selector(ModMenu::onSetAllToDefault)
         );
-        resetButton->setPosition({m_size.width - 73.f, 17.f});
+        resetButton->setPosition({
+            m_size.width - resetSprite->getScaledContentSize().width / 2.f - 16.f,
+            16.f
+        });
         m_mainLayer->addChild(resetButton);
     }
 
@@ -706,46 +759,49 @@ bool ModMenu::init() {
 }
 
 void ModMenu::createHeader() {
-    auto title = createMenuLabel("Mod Universal", 0.78f);
+    bool const compact = isCompactMenu(m_size.width);
+
+    auto logo = CCSprite::create("PopupTitle.png"_spr);
+    if (logo && (!compact || m_size.width >= 450.f)) {
+        float const desiredWidth = compact ? 92.f : 130.f;
+        logo->setScale(desiredWidth / logo->getContentSize().width);
+        logo->setAnchorPoint({0.f, 0.5f});
+        logo->setPosition({18.f, m_size.height - 30.f});
+        m_mainLayer->addChild(logo, 100);
+    }
+
+    float const titleX =
+        (!compact || m_size.width >= 450.f) ? 158.f : 20.f;
+
+    auto title = createMenuLabel(
+        "MOD UNIVERSAL",
+        compact ? 0.52f : 0.58f
+    );
     title->setAnchorPoint({0.f, 0.5f});
-    title->setPosition({22.f, m_size.height - 25.f});
+    title->setPosition({titleX, m_size.height - 23.f});
     m_mainLayer->addChild(title);
 
     auto subtitle = createMutedMenuLabel(
         "Universal Geometry Dash toolkit",
-        0.31f
+        compact ? 0.25f : 0.28f
     );
     subtitle->setAnchorPoint({0.f, 0.5f});
-    subtitle->setPosition({22.f, m_size.height - 48.f});
+    subtitle->setPosition({titleX, m_size.height - 44.f});
     m_mainLayer->addChild(subtitle);
 
-    auto version = createMutedMenuLabel("v0.1.3", 0.30f);
+    auto version = createMutedMenuLabel("v0.2.0", 0.27f);
     version->setAnchorPoint({1.f, 0.5f});
-    version->setPosition({m_size.width - 46.f, m_size.height - 32.f});
+    version->setPosition({m_size.width - 18.f, m_size.height - 23.f});
     m_mainLayer->addChild(version);
 
-    auto divider = extension::CCScale9Sprite::create("square02_small.png");
-    if (divider) {
-        divider->setContentSize({m_size.width - 32.f, 1.5f});
-        divider->setColor({70, 70, 78});
-        divider->setOpacity(170);
-        divider->setPosition({m_size.width / 2.f, m_size.height - 63.f});
-        m_mainLayer->addChild(divider);
-    }
+    addModernDivider(
+        m_mainLayer,
+        {m_size.width / 2.f, m_size.height - 67.f},
+        m_size.width - 36.f
+    );
 }
 
 void ModMenu::createTabBar() {
-    auto sidebar = createModernPanel(
-        m_mainLayer,
-        {74.f, 191.f},
-        {132.f, 294.f},
-        {33, 33, 39},
-        238
-    );
-
-    if (!sidebar)
-        log::warn("Could not create sidebar panel");
-
     auto menu = CCMenu::create();
     menu->setPosition({0.f, 0.f});
     m_mainLayer->addChild(menu);
@@ -758,64 +814,156 @@ void ModMenu::createTabBar() {
         "Settings"
     };
 
-    constexpr float startY = 292.f;
-    constexpr float gap = 52.f;
+    bool const compact = isCompactMenu(m_size.width);
 
-    for (int i = 0; i < 5; i++) {
-        auto spr = ButtonSprite::create(
-            tabs[i],
-            "goldFont.fnt",
-            "GJ_button_04.png",
-            0.52f
-        );
-        if (!spr)
-            continue;
-
-        spr->setScale(0.82f);
-
-        auto btn = CCMenuItemSpriteExtra::create(
-            spr,
-            this,
-            menu_selector(ModMenu::onTab)
-        );
-        if (!btn)
-            continue;
-
-        btn->setTag(i);
-        btn->setPosition({74.f, startY - i * gap});
-
-        spr->setColor(
-            i == 0
-                ? ccColor3B{120, 255, 120}
-                : ccColor3B{220, 220, 220}
+    if (!compact) {
+        createModernPanel(
+            m_mainLayer,
+            {88.f, (m_size.height - 84.f) / 2.f},
+            {138.f, m_size.height - 94.f},
+            {34, 34, 41},
+            240
         );
 
-        menu->addChild(btn);
+        float const startY = m_size.height - 101.f;
+        float const gap = 51.f;
+
+        for (int i = 0; i < 5; i++) {
+            auto background =
+                extension::CCScale9Sprite::create("square02_small.png");
+            if (!background)
+                continue;
+
+            background->setContentSize({114.f, 38.f});
+            background->setColor({48, 48, 56});
+            background->setOpacity(225);
+
+            auto label = CCLabelBMFont::create(tabs[i], "goldFont.fnt");
+            if (!label)
+                continue;
+
+            label->setScale(0.45f);
+            label->setColor({215, 215, 220});
+            label->setPosition({57.f, 19.f});
+            background->addChild(label);
+
+            auto button = CCMenuItemSpriteExtra::create(
+                background,
+                this,
+                menu_selector(ModMenu::onTab)
+            );
+            if (!button)
+                continue;
+
+            button->setTag(i);
+            button->setPosition({88.f, startY - i * gap});
+            menu->addChild(button);
+        }
+    }
+    else {
+        bool const twoRows = m_size.width < 450.f;
+
+        if (twoRows) {
+            float const gap = 7.f;
+            float const width =
+                (m_size.width - 36.f - gap * 2.f) / 3.f;
+
+            for (int i = 0; i < 5; i++) {
+                auto background =
+                    extension::CCScale9Sprite::create("square02_small.png");
+                if (!background)
+                    continue;
+
+                background->setContentSize({width, 30.f});
+                background->setColor({48, 48, 56});
+                background->setOpacity(225);
+
+                auto label = CCLabelBMFont::create(tabs[i], "goldFont.fnt");
+                if (!label)
+                    continue;
+
+                label->setScale(0.39f);
+                label->setColor({215, 215, 220});
+                label->setPosition({width / 2.f, 15.f});
+                background->addChild(label);
+
+                auto button = CCMenuItemSpriteExtra::create(
+                    background,
+                    this,
+                    menu_selector(ModMenu::onTab)
+                );
+                if (!button)
+                    continue;
+
+                int const row = i / 3;
+                int const column = i % 3;
+
+                button->setTag(i);
+                button->setPosition({
+                    18.f + width / 2.f + column * (width + gap),
+                    m_size.height - 79.f - row * 35.f
+                });
+                menu->addChild(button);
+            }
+        }
+        else {
+            float const gap = 6.f;
+            float const width =
+                (m_size.width - 36.f - gap * 4.f) / 5.f;
+
+            for (int i = 0; i < 5; i++) {
+                auto background =
+                    extension::CCScale9Sprite::create("square02_small.png");
+                if (!background)
+                    continue;
+
+                background->setContentSize({width, 32.f});
+                background->setColor({48, 48, 56});
+                background->setOpacity(225);
+
+                auto label = CCLabelBMFont::create(tabs[i], "goldFont.fnt");
+                if (!label)
+                    continue;
+
+                label->setScale(0.40f);
+                label->setColor({215, 215, 220});
+                label->setPosition({width / 2.f, 16.f});
+                background->addChild(label);
+
+                auto button = CCMenuItemSpriteExtra::create(
+                    background,
+                    this,
+                    menu_selector(ModMenu::onTab)
+                );
+                if (!button)
+                    continue;
+
+                button->setTag(i);
+                button->setPosition({
+                    18.f + width / 2.f + i * (width + gap),
+                    m_size.height - 83.f
+                });
+                menu->addChild(button);
+            }
+        }
     }
 }
 
 void ModMenu::createContentPanel() {
+    bool const compact = isCompactMenu(m_size.width);
+
+    float const left = compact ? 18.f : 166.f;
+    float const top = compact
+        ? (m_size.width < 450.f ? 142.f : 128.f)
+        : m_size.height - 82.f;
+
     m_contentPanel = CCNode::create();
-
     m_contentPanel->setContentSize({
-        m_size.width - 170.f,
-        294.f
+        m_size.width - left - 18.f,
+        top - 18.f
     });
-
-    m_contentPanel->setPosition({
-        148.f,
-        42.f
-    });
-
+    m_contentPanel->setPosition({left, 18.f});
     m_mainLayer->addChild(m_contentPanel);
-
-    createModernPanel(
-        m_contentPanel,
-        m_contentPanel->getContentSize() / 2.f,
-        m_contentPanel->getContentSize(),
-        {42, 42, 49},
-        236
-    );
 
     onTab(nullptr);
 }
@@ -875,18 +1023,21 @@ void ModMenu::onTab(CCObject* sender) {
         auto tabMenu = static_cast<CCMenu*>(btn->getParent());
 
         for (auto* child : CCArrayExt<CCNode*>(tabMenu->getChildren())) {
-            auto otherButton = typeinfo_cast<CCMenuItemSpriteExtra*>(child);
-            if (!otherButton)
+            auto button = typeinfo_cast<CCMenuItemSpriteExtra*>(child);
+            if (!button)
                 continue;
 
-            auto sprite = typeinfo_cast<ButtonSprite*>(otherButton->getNormalImage());
-            if (!sprite)
+            auto background =
+                typeinfo_cast<extension::CCScale9Sprite*>(
+                    button->getNormalImage()
+                );
+            if (!background)
                 continue;
 
-            sprite->setColor(
-                otherButton == btn
-                    ? ccColor3B{120, 255, 120}
-                    : ccColor3B{220, 220, 220}
+            background->setColor(
+                button == btn
+                    ? ccColor3B{64, 85, 66}
+                    : ccColor3B{48, 48, 56}
             );
         }
     }
@@ -896,13 +1047,14 @@ void ModMenu::onTab(CCObject* sender) {
 
     m_contentPanel->removeAllChildrenWithCleanup(true);
 
-    createModernPanel(
+    if (!createModernPanel(
         m_contentPanel,
         m_contentPanel->getContentSize() / 2.f,
         m_contentPanel->getContentSize(),
         {42, 42, 49},
-        236
-    );
+        238
+    ))
+        return;
 
     constexpr const char* tabTitles[] = {
         "Player",
@@ -913,36 +1065,52 @@ void ModMenu::onTab(CCObject* sender) {
     };
 
     constexpr const char* tabDescriptions[] = {
-        "Gameplay modifications and player controls.",
+        "Gameplay tools and player controls.",
         "Visual and rendering tools.",
         "Level creation and editor tools.",
         "Utilities and quality-of-life features.",
         "ModUniversal configuration."
     };
 
-    auto title = createMenuLabel(tabTitles[tab], 0.68f);
+    bool const compact = isCompactMenu(m_size.width);
+    float const width = m_contentPanel->getContentSize().width;
+    float const height = m_contentPanel->getContentSize().height;
+
+    auto title = createMenuLabel(
+        tabTitles[tab],
+        compact ? 0.56f : 0.62f
+    );
     title->setAnchorPoint({0.f, 0.5f});
-    title->setPosition({24.f, 258.f});
+    title->setPosition({24.f, height - 27.f});
     m_contentPanel->addChild(title);
 
-    auto subtitle = createMutedMenuLabel(tabDescriptions[tab], 0.32f);
+    auto subtitle = createMutedMenuLabel(
+        tabDescriptions[tab],
+        compact ? 0.27f : 0.30f
+    );
     subtitle->setAnchorPoint({0.f, 0.5f});
-    subtitle->setPosition({24.f, 235.f});
+    subtitle->setPosition({24.f, height - 48.f});
     m_contentPanel->addChild(subtitle);
 
     addModernDivider(
         m_contentPanel,
-        {m_contentPanel->getContentSize().width / 2.f, 220.f},
-        m_contentPanel->getContentSize().width - 48.f
+        {width / 2.f, height - 64.f},
+        width - 48.f
     );
 
     if (tab == 0) {
+        float const cardHeight = compact ? 112.f : 126.f;
+        float const cardY = std::max(
+            78.f,
+            std::min(height * 0.50f, height - 93.f)
+        );
+
         auto card = createModernPanel(
             m_contentPanel,
-            {m_contentPanel->getContentSize().width / 2.f, 150.f},
-            {m_contentPanel->getContentSize().width - 40.f, 116.f},
-            {50, 50, 58},
-            245
+            {width / 2.f, cardY},
+            {width - 40.f, cardHeight},
+            {51, 51, 59},
+            246
         );
 
         if (!card)
@@ -952,18 +1120,23 @@ void ModMenu::onTab(CCObject* sender) {
         menu->setPosition({0.f, 0.f});
         m_contentPanel->addChild(menu);
 
-        auto noclipLabel = createMenuLabel("Noclip", 0.52f);
+        auto noclipLabel = createMenuLabel(
+            "Noclip",
+            compact ? 0.46f : 0.50f
+        );
         noclipLabel->setAnchorPoint({0.f, 0.5f});
-        noclipLabel->setPosition({32.f, 177.f});
+        noclipLabel->setPosition({34.f, cardY + 23.f});
         m_contentPanel->addChild(noclipLabel);
 
         auto noclipDescription = createMutedMenuLabel(
             "Pass through level geometry and hazards.",
-            0.30f
+            compact ? 0.25f : 0.28f
         );
         noclipDescription->setAnchorPoint({0.f, 0.5f});
-        noclipDescription->setPosition({32.f, 156.f});
+        noclipDescription->setPosition({34.f, cardY + 4.f});
         m_contentPanel->addChild(noclipDescription);
+
+        s_noclipRowY = cardY - 26.f;
 
         auto gearSprite = CCSprite::createWithSpriteFrameName(
             "GJ_optionsBtn02_001.png"
@@ -972,25 +1145,18 @@ void ModMenu::onTab(CCObject* sender) {
         auto noclipDefaultButton = createHackDefaultButton(
             menu,
             NoclipSettingKeys,
-            {NoclipUndoX, NoclipRowY}
+            {0.f, s_noclipRowY}
         );
         s_noclipDefaultButton = noclipDefaultButton;
 
-        bool const hasNoclipChanges =
-            noclipDefaultButton && noclipDefaultButton->isVisible();
-
         if (gearSprite) {
-            gearSprite->setScale(0.72f);
+            gearSprite->setScale(0.66f);
 
             auto gearButton = CCMenuItemSpriteExtra::create(
                 gearSprite,
                 this,
                 menu_selector(ModMenu::onNoclipSettings)
             );
-            gearButton->setPosition({
-                hasNoclipChanges ? NoclipGearXWithUndo : NoclipGearXWithoutUndo,
-                NoclipRowY
-            });
             s_noclipSettingsButton = gearButton;
             menu->addChild(gearButton);
         }
@@ -1001,41 +1167,42 @@ void ModMenu::onTab(CCObject* sender) {
         auto noclipToggle = createNoclipCheckbox(
             menu,
             "noclip-enabled",
-            {NoclipCheckboxX, NoclipRowY}
+            {0.f, s_noclipRowY}
         );
         s_noclipCheckboxButton = noclipToggle;
 
         if (!noclipToggle)
             log::warn("Could not create noclip checkbox");
 
+        updateNoclipRowLayout();
         return;
     }
 
     auto emptyCard = createModernPanel(
         m_contentPanel,
-        {m_contentPanel->getContentSize().width / 2.f, 143.f},
-        {m_contentPanel->getContentSize().width - 40.f, 104.f},
-        {50, 50, 58},
-        245
+        {width / 2.f, std::max(82.f, height * 0.45f)},
+        {width - 40.f, 108.f},
+        {51, 51, 59},
+        246
     );
 
     if (!emptyCard)
         return;
 
-    auto emptyTitle = createMenuLabel("No options yet", 0.48f);
+    auto emptyTitle = createMenuLabel("No modules yet", 0.45f);
     emptyTitle->setPosition({
-        m_contentPanel->getContentSize().width / 2.f,
-        157.f
+        width / 2.f,
+        std::max(82.f, height * 0.45f) + 12.f
     });
     m_contentPanel->addChild(emptyTitle);
 
     auto emptyDescription = createMutedMenuLabel(
-        "This section is ready for future ModUniversal modules.",
-        0.30f
+        "This section is ready for future ModUniversal features.",
+        0.27f
     );
     emptyDescription->setPosition({
-        m_contentPanel->getContentSize().width / 2.f,
-        134.f
+        width / 2.f,
+        std::max(82.f, height * 0.45f) - 13.f
     });
     m_contentPanel->addChild(emptyDescription);
 }
