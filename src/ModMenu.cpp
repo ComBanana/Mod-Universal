@@ -10,7 +10,7 @@
 
 namespace {
 
-constexpr char const* NoclipSettingKeys[] = {
+std::vector<std::string> const NoclipSettingKeys = {
     "noclip-enabled",
     "noclip-phase-blocks",
     "noclip-block-mode",
@@ -24,7 +24,7 @@ constexpr char const* NoclipSettingKeys[] = {
     "noclip-hazard-other",
 };
 
-void ensureNoclipSettingsFile() {
+void ensureSettingsFile() {
     auto const path = Mod::get()->getSaveDir() / "settings.json";
     std::error_code ec;
 
@@ -33,7 +33,7 @@ void ensureNoclipSettingsFile() {
 
     if (ec) {
         log::error(
-            "Failed to check Noclip settings file: {}",
+            "Failed to check settings file: {}",
             ec.message()
         );
         return;
@@ -41,26 +41,81 @@ void ensureNoclipSettingsFile() {
 
     if (auto result = Mod::get()->saveData(); !result) {
         log::error(
-            "Failed to create default Noclip settings file: {}",
+            "Failed to create default settings file: {}",
             result.unwrapErr()
         );
     }
 }
 
-void resetNoclipSettingsToDefault() {
-    for (auto const* key : NoclipSettingKeys) {
+bool areSettingsAtDefault(std::vector<std::string> const& keys) {
+    for (auto const& key : keys) {
+        if (auto setting = Mod::get()->getSetting(key);
+            setting && !setting->isDefaultValue()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void resetSettingsToDefault(std::vector<std::string> const& keys) {
+    for (auto const& key : keys) {
         if (auto setting = Mod::get()->getSetting(key))
             setting->reset();
         else
-            log::warn("Could not find Noclip setting '{}'", key);
+            log::warn("Could not find setting '{}'", key);
     }
 
     if (auto result = Mod::get()->saveData(); !result) {
         log::error(
-            "Failed to save reset Noclip settings: {}",
+            "Failed to save reset settings: {}",
             result.unwrapErr()
         );
     }
+}
+
+CCMenuItemSpriteExtra* createHackDefaultButton(
+    CCMenu* menu,
+    std::vector<std::string> settingKeys,
+    CCPoint position
+) {
+    if (!menu || settingKeys.empty())
+        return nullptr;
+
+    auto sprite = ButtonSprite::create(
+        "Undo",
+        "goldFont.fnt",
+        "GJ_button_01.png",
+        0.42f
+    );
+
+    if (!sprite)
+        return nullptr;
+
+    auto const showButton = !areSettingsAtDefault(settingKeys);
+
+    auto button = CCMenuItemExt::createSpriteExtra(
+        sprite,
+        [keys = std::move(settingKeys)](CCMenuItemSpriteExtra*) {
+            resetSettingsToDefault(keys);
+            ModMenu::refreshCurrentTab();
+        }
+    );
+
+    if (!button)
+        return nullptr;
+
+    button->setPosition(position);
+    button->setVisible(showButton);
+    menu->addChild(button);
+    return button;
+}
+
+WeakRef<CCMenuItemSpriteExtra> s_noclipDefaultButton;
+
+void updateNoclipDefaultButton() {
+    if (auto button = s_noclipDefaultButton.lock())
+        button->setVisible(!areSettingsAtDefault(NoclipSettingKeys));
 }
 
 CCLabelBMFont* createMenuLabel(char const* text, float scale = 0.45f) {
@@ -160,6 +215,7 @@ CCMenuItemSpriteExtra* createNoclipCheckbox(
 
             refreshNoclipCheckbox(item, next);
             saveNoclipButtonSettings();
+            updateNoclipDefaultButton();
 
             log::info(
                 "Noclip setting '{}' changed to {}",
@@ -353,9 +409,6 @@ public:
 class NoclipSettingsPopup : public Popup {
 protected:
     ButtonSprite* m_blockModeButton = nullptr;
-    CCMenuItemSpriteExtra* m_phaseBlocksToggle = nullptr;
-    CCMenuItemSpriteExtra* m_phaseSlopesToggle = nullptr;
-    CCMenuItemSpriteExtra* m_phaseHazardsToggle = nullptr;
 
     bool init() {
         if (!Popup::init(440.f, 285.f))
@@ -414,21 +467,6 @@ protected:
         info->setOpacity(180);
         m_mainLayer->addChild(info);
 
-        auto resetSprite = ButtonSprite::create(
-            "Set to Default",
-            "goldFont.fnt",
-            "GJ_button_01.png",
-            0.55f
-        );
-
-        auto resetButton = CCMenuItemSpriteExtra::create(
-            resetSprite,
-            this,
-            menu_selector(NoclipSettingsPopup::onResetToDefault)
-        );
-        resetButton->setPosition({350.f, 25.f});
-        menu->addChild(resetButton);
-
         auto closeSprite = ButtonSprite::create(
             "Back",
             "goldFont.fnt",
@@ -464,17 +502,8 @@ protected:
             {370.f, y}
         );
 
-        if (!toggle) {
+        if (!toggle)
             log::warn("Could not create noclip checkbox for {}", settingKey);
-            return nullptr;
-        }
-
-        if (std::string_view(settingKey) == "noclip-phase-blocks")
-            m_phaseBlocksToggle = toggle;
-        else if (std::string_view(settingKey) == "noclip-phase-slopes")
-            m_phaseSlopesToggle = toggle;
-        else if (std::string_view(settingKey) == "noclip-phase-hazards")
-            m_phaseHazardsToggle = toggle;
 
         return toggle;
     }
@@ -508,45 +537,6 @@ protected:
                     : "Safe Block Touch"
             );
         }
-    }
-
-    void onResetToDefault(CCObject*) {
-        createQuickPopup(
-            "Set to Default",
-            "This will change all previously changed <cr>Noclip settings</c> "
-            "back to their <cy>default values</c>. This cannot be undone.",
-            "Cancel",
-            "Reset",
-            [this](auto, bool btn2) {
-                if (!btn2)
-                    return;
-
-                resetNoclipSettingsToDefault();
-
-                if (m_phaseBlocksToggle) {
-                    refreshNoclipCheckbox(
-                        m_phaseBlocksToggle,
-                        Mod::get()->getSettingValue<bool>("noclip-phase-blocks")
-                    );
-                }
-
-                if (m_phaseSlopesToggle) {
-                    refreshNoclipCheckbox(
-                        m_phaseSlopesToggle,
-                        Mod::get()->getSettingValue<bool>("noclip-phase-slopes")
-                    );
-                }
-
-                if (m_phaseHazardsToggle) {
-                    refreshNoclipCheckbox(
-                        m_phaseHazardsToggle,
-                        Mod::get()->getSettingValue<bool>("noclip-phase-hazards")
-                    );
-                }
-
-                ModMenu::refreshPlayerTab();
-            }
-        );
     }
 
     void onHazardSettings(CCObject*) {
@@ -590,7 +580,7 @@ public:
 } // namespace
 
 bool ModMenu::init() {
-    ensureNoclipSettingsFile();
+    ensureSettingsFile();
 
     if (!Popup::init(460.f, 235.f))
         return false;
@@ -598,6 +588,23 @@ bool ModMenu::init() {
     createHeader();
     createTabBar();
     createContentPanel();
+
+    auto resetSprite = ButtonSprite::create(
+        "Set to Default",
+        "goldFont.fnt",
+        "GJ_button_01.png",
+        0.5f
+    );
+
+    if (resetSprite) {
+        auto resetButton = CCMenuItemSpriteExtra::create(
+            resetSprite,
+            this,
+            menu_selector(ModMenu::onSetAllToDefault)
+        );
+        resetButton->setPosition({m_size.width - 70.f, 15.f});
+        m_mainLayer->addChild(resetButton);
+    }
 
     return true;
 }
@@ -751,11 +758,12 @@ void ModMenu::onClose(CCObject* sender) {
 }
 
 void ModMenu::onTab(CCObject* sender) {
-    int tab = 0;
+    int tab = m_currentTab;
 
     if (sender) {
         auto btn = static_cast<CCMenuItemSpriteExtra*>(sender);
         tab = btn->getTag();
+        m_currentTab = tab;
 
         log::info("Clicked tab {}", tab);
 
@@ -803,17 +811,24 @@ void ModMenu::onTab(CCObject* sender) {
                 this,
                 menu_selector(ModMenu::onNoclipSettings)
             );
-            gearButton->setPosition({255.f, 62.f});
+            gearButton->setPosition({235.f, 62.f});
             menu->addChild(gearButton);
         }
         else {
             log::warn("Could not load noclip settings gear sprite");
         }
 
+        auto noclipDefaultButton = createHackDefaultButton(
+            menu,
+            NoclipSettingKeys,
+            {280.f, 62.f}
+        );
+        s_noclipDefaultButton = noclipDefaultButton;
+
         auto noclipToggle = createNoclipCheckbox(
             menu,
             "noclip-enabled",
-            {305.f, 62.f}
+            {330.f, 62.f}
         );
 
         if (!noclipToggle)
@@ -845,9 +860,26 @@ void ModMenu::onNoclipSettings(CCObject*) {
     openNoclipSettings();
 }
 
-void ModMenu::refreshPlayerTab() {
+void ModMenu::refreshCurrentTab() {
     if (s_instance && s_instance->m_contentPanel)
         s_instance->onTab(nullptr);
+}
+
+void ModMenu::onSetAllToDefault(CCObject*) {
+    createQuickPopup(
+        "Set to Default",
+        "This will change all previously changed <cr>settings</c> "
+        "back to their <cy>default values</c>. This cannot be undone.",
+        "Cancel",
+        "Reset",
+        [this](auto, bool btn2) {
+            if (!btn2)
+                return;
+
+            resetSettingsToDefault(Mod::get()->getSettingKeys());
+            this->onTab(nullptr);
+        }
+    );
 }
 
 void ModMenu::openNoclipSettings() {
