@@ -89,6 +89,7 @@ CCMenuItemSpriteExtra* createHackDefaultButton(
     if (!sprite)
         return nullptr;
 
+    sprite->setAnchorPoint({0.5f, 0.5f});
     sprite->setScale(0.8f);
 
     auto const showButton = !areSettingsAtDefault(settingKeys);
@@ -104,6 +105,7 @@ CCMenuItemSpriteExtra* createHackDefaultButton(
     if (!button)
         return nullptr;
 
+    button->setAnchorPoint({0.5f, 0.5f});
     button->setPosition(position);
     button->setVisible(showButton);
     menu->addChild(button);
@@ -136,10 +138,18 @@ void updateNoclipRowLayout() {
     if (!panel)
         return;
 
-    float const right = panel->getContentSize().width - 34.f;
-    float const checkboxX = right;
-    float const gearX = right - 48.f;
-    float const undoX = right - 96.f;
+    float const rightEdge = panel->getContentSize().width - 20.f;
+    float const toggleHalfWidth = 39.f;
+    float const iconSlot = 32.f;
+    float const gap = 12.f;
+
+    // Positions are the centers of each control, measured from the card's
+    // actual right edge so the textures stay fully inside the panel.
+    float const checkboxX = rightEdge - toggleHalfWidth;
+    float const gearX =
+        checkboxX - toggleHalfWidth - gap - iconSlot / 2.f;
+    float const undoX =
+        gearX - iconSlot / 2.f - gap - iconSlot / 2.f;
 
     if (defaultButton) {
         defaultButton->setVisible(hasNoclipChanges);
@@ -472,6 +482,7 @@ protected:
             m_bgSprite->setVisible(false);
 
         if (m_closeBtn) {
+            m_closeBtn->setAnchorPoint({0.5f, 0.5f});
             m_closeBtn->setPosition({
                 m_size.width - 20.f,
                 m_size.height - 20.f
@@ -631,6 +642,7 @@ protected:
             m_bgSprite->setVisible(false);
 
         if (m_closeBtn) {
+            m_closeBtn->setAnchorPoint({0.5f, 0.5f});
             m_closeBtn->setPosition({
                 m_size.width - 20.f,
                 m_size.height - 20.f
@@ -922,6 +934,7 @@ bool ModMenu::init() {
         m_bgSprite->setVisible(false);
 
     if (m_closeBtn) {
+        m_closeBtn->setAnchorPoint({0.5f, 0.5f});
         m_closeBtn->setPosition({
             m_size.width - 22.f,
             m_size.height - 22.f
@@ -1362,8 +1375,10 @@ void ModMenu::onTab(CCObject* sender) {
         auto gearSprite = CCSprite::createWithSpriteFrameName(
             "GJ_optionsBtn02_001.png"
         );
-        if (gearSprite)
+        if (gearSprite) {
+            gearSprite->setAnchorPoint({0.5f, 0.5f});
             gearSprite->setScale(0.72f);
+        }
 
         auto noclipDefaultButton = createHackDefaultButton(
             menu,
@@ -1378,6 +1393,7 @@ void ModMenu::onTab(CCObject* sender) {
                 this,
                 menu_selector(ModMenu::onNoclipSettings)
             );
+            gearButton->setAnchorPoint({0.5f, 0.5f});
             s_noclipSettingsButton = gearButton;
             menu->addChild(gearButton);
         }
