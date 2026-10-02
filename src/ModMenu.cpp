@@ -1310,6 +1310,38 @@ ModMenu* ModMenu::create() {
     return nullptr;
 }
 
+void ModMenu::toggle() {
+    // F3 acts like a back action: close the deepest open submenu first.
+    if (closeTopNestedPopup())
+        return;
+
+    // The ModUniversal menu is intentionally unavailable during active,
+    // unpaused gameplay, but remains usable from the pause screen.
+    if (auto* playLayer = PlayLayer::get();
+        playLayer && !playLayer->m_isPaused) {
+        return;
+    }
+
+    if (s_instance) {
+        s_instance->onClose(nullptr);
+        return;
+    }
+
+    s_instance = create();
+
+    if (s_instance)
+        s_instance->show();
+}
+
+void ModMenu::onClose(CCObject* sender) {
+    log::info("Popup closed!");
+
+    closeAllNestedPopups();
+    saveMenuSettings();
+    s_instance = nullptr;
+    Popup::onClose(sender);
+}
+
 void ModMenu::onTab(CCObject* sender) {
     int tab = m_currentTab;
 
