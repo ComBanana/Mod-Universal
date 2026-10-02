@@ -3,6 +3,10 @@
 #include <Geode/loader/Mod.hpp>
 #include <Geode/modify/PlayLayer.hpp>
 
+#include <algorithm>
+#include <functional>
+#include <vector>
+
 namespace {
 
 CCLabelBMFont* createMenuLabel(char const* text, float scale = 0.45f) {
@@ -41,6 +45,75 @@ CCMenuItemToggler* createCheckbox(
 
     parent->addChild(toggle);
     return toggle;
+}
+
+struct NestedPopupEntry {
+    Popup* popup = nullptr;
+    std::function<void()> close;
+};
+
+std::vector<NestedPopupEntry> s_nestedPopups;
+
+void registerNestedPopup(Popup* popup, std::function<void()> close) {
+    if (!popup)
+        return;
+
+    s_nestedPopups.erase(
+        std::remove_if(
+            s_nestedPopups.begin(),
+            s_nestedPopups.end(),
+            [popup](NestedPopupEntry const& entry) {
+                return entry.popup == popup;
+            }
+        ),
+        s_nestedPopups.end()
+    );
+
+    s_nestedPopups.push_back({
+        popup,
+        std::move(close),
+    });
+}
+
+void unregisterNestedPopup(Popup* popup) {
+    s_nestedPopups.erase(
+        std::remove_if(
+            s_nestedPopups.begin(),
+            s_nestedPopups.end(),
+            [popup](NestedPopupEntry const& entry) {
+                return entry.popup == popup;
+            }
+        ),
+        s_nestedPopups.end()
+    );
+}
+
+bool closeTopNestedPopup() {
+    while (!s_nestedPopups.empty()) {
+        auto entry = std::move(s_nestedPopups.back());
+        s_nestedPopups.pop_back();
+
+        if (!entry.popup || !entry.popup->getParent())
+            continue;
+
+        if (entry.close)
+            entry.close();
+
+        return true;
+    }
+
+    return false;
+}
+
+void closeAllNestedPopups() {
+    while (closeTopNestedPopup()) {
+    }
+}
+
+void saveMenuSettings() {
+    if (auto result = Mod::get()->saveData(); !result) {
+        log::error("Failed to save ModUniversal settings: {}", result.unwrapErr());
+    }
 }
 
 class NoclipHazardPopup : public Popup {
@@ -133,6 +206,7 @@ protected:
     }
 
     void onClosePopup(CCObject*) {
+        unregisterNestedPopup(this);
         this->onClose(nullptr);
     }
 
@@ -141,6 +215,16 @@ protected:
     }
 
 public:
+    void showAndRegister() {
+        this->show();
+        registerNestedPopup(
+            this,
+            [this]() {
+                this->onClosePopup(nullptr);
+            }
+        );
+    }
+
     static NoclipHazardPopup* create() {
         auto ret = new NoclipHazardPopup();
 
@@ -304,10 +388,11 @@ protected:
 
     void onHazardSettings(CCObject*) {
         if (auto popup = NoclipHazardPopup::create())
-            popup->show();
+            popup->showAndRegister();
     }
 
     void onClosePopup(CCObject*) {
+        unregisterNestedPopup(this);
         this->onClose(nullptr);
     }
 
@@ -316,6 +401,16 @@ protected:
     }
 
 public:
+    void showAndRegister() {
+        this->show();
+        registerNestedPopup(
+            this,
+            [this]() {
+                this->onClosePopup(nullptr);
+            }
+        );
+    }
+
     static NoclipSettingsPopup* create() {
         auto ret = new NoclipSettingsPopup();
 
@@ -459,13 +554,19 @@ ModMenu* ModMenu::create() {
 }
 
 void ModMenu::toggle() {
-    // The ModUniversal menu is intentionally unavailable during gameplay.
-    if (PlayLayer::get())
+    // F3 acts like a back action: close the deepest open submenu first.
+    if (closeTopNestedPopup())
         return;
 
+    // The ModUniversal menu is intentionally unavailable during active,
+    // unpaused gameplay, but remains usable from the pause screen.
+    if (auto* playLayer = PlayLayer::get();
+        playLayer && !playLayer->m_isPaused) {
+        return;
+    }
+
     if (s_instance) {
-        s_instance->removeFromParentAndCleanup(true);
-        s_instance = nullptr;
+        s_instance->onClose(nullptr);
         return;
     }
 
@@ -478,6 +579,8 @@ void ModMenu::toggle() {
 void ModMenu::onClose(CCObject* sender) {
     log::info("Popup closed!");
 
+    closeAllNestedPopups();
+    saveMenuSettings();
     s_instance = nullptr;
     Popup::onClose(sender);
 }
@@ -591,7 +694,7 @@ void ModMenu::onNoclipSettings(CCObject*) {
 
 void ModMenu::openNoclipSettings() {
     if (auto popup = NoclipSettingsPopup::create())
-        popup->show();
+        popup->showAndRegister();
 }
 
 void ModMenu::openNoclipHazardSettings() {
