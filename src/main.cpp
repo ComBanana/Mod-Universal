@@ -51,20 +51,6 @@ $on_mod(Loaded) {
         log::info("Experimental Noclip UI baseline initialized.");
     }
 
-    // Noclip settings are edited directly by the custom ModMenu UI.
-    // Save them immediately so changes persist when the menu is closed.
-    listenForSettingChanges<bool>("noclip-enabled", saveNoclipSetting<bool>);
-    listenForSettingChanges<bool>("noclip-phase-blocks", saveNoclipSetting<bool>);
-    listenForSettingChanges<std::string>("noclip-block-mode", saveNoclipSetting<std::string>);
-    listenForSettingChanges<bool>("noclip-phase-slopes", saveNoclipSetting<bool>);
-    listenForSettingChanges<bool>("noclip-phase-hazards", saveNoclipSetting<bool>);
-    listenForSettingChanges<bool>("noclip-hazard-spikes", saveNoclipSetting<bool>);
-    listenForSettingChanges<bool>("noclip-hazard-ground-spikes", saveNoclipSetting<bool>);
-    listenForSettingChanges<bool>("noclip-hazard-saws", saveNoclipSetting<bool>);
-    listenForSettingChanges<bool>("noclip-hazard-pits", saveNoclipSetting<bool>);
-    listenForSettingChanges<bool>("noclip-hazard-animated", saveNoclipSetting<bool>);
-    listenForSettingChanges<bool>("noclip-hazard-other", saveNoclipSetting<bool>);
-
     listenForKeybindSettingPresses(
         "toggle-menu",
 
