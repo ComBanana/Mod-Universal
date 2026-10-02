@@ -17,32 +17,31 @@ void saveNoclipSettings() {
 
 $on_mod(Loaded) {
 
-    // EXPERIMENTAL ONLY: establish a clean baseline for the rewritten
-    // Noclip UI the first time this branch is run. This happens once and
-    // does not repeatedly overwrite later choices.
+    // Apply the new 0.1.3 Noclip defaults once to existing installs. After
+    // this migration, normal setting changes are preserved as usual.
     if (!Mod::get()->getSavedValue<bool>(
-            "experimental-noclip-button-rewrite-v1",
+            "noclip-defaults-v0.1.3-applied",
             false
         )) {
-        Mod::get()->setSettingValue<bool>("noclip-enabled", false);
-        Mod::get()->setSettingValue<bool>("noclip-phase-blocks", false);
+        Mod::get()->setSettingValue<bool>("noclip-enabled", true);
+        Mod::get()->setSettingValue<bool>("noclip-phase-blocks", true);
         Mod::get()->setSettingValue<std::string>("noclip-block-mode", "safe-touch");
-        Mod::get()->setSettingValue<bool>("noclip-phase-slopes", false);
-        Mod::get()->setSettingValue<bool>("noclip-phase-hazards", false);
-        Mod::get()->setSettingValue<bool>("noclip-hazard-spikes", false);
-        Mod::get()->setSettingValue<bool>("noclip-hazard-ground-spikes", false);
-        Mod::get()->setSettingValue<bool>("noclip-hazard-saws", false);
-        Mod::get()->setSettingValue<bool>("noclip-hazard-pits", false);
-        Mod::get()->setSettingValue<bool>("noclip-hazard-animated", false);
-        Mod::get()->setSettingValue<bool>("noclip-hazard-other", false);
+        Mod::get()->setSettingValue<bool>("noclip-phase-slopes", true);
+        Mod::get()->setSettingValue<bool>("noclip-phase-hazards", true);
+        Mod::get()->setSettingValue<bool>("noclip-hazard-spikes", true);
+        Mod::get()->setSettingValue<bool>("noclip-hazard-ground-spikes", true);
+        Mod::get()->setSettingValue<bool>("noclip-hazard-saws", true);
+        Mod::get()->setSettingValue<bool>("noclip-hazard-pits", true);
+        Mod::get()->setSettingValue<bool>("noclip-hazard-animated", true);
+        Mod::get()->setSettingValue<bool>("noclip-hazard-other", true);
 
         Mod::get()->setSavedValue<bool>(
-            "experimental-noclip-button-rewrite-v1",
+            "noclip-defaults-v0.1.3-applied",
             true
         );
 
         saveNoclipSettings();
-        log::info("Experimental Noclip UI baseline initialized.");
+        log::info("0.1.3 Noclip defaults initialized.");
     }
 
     listenForKeybindSettingPresses(
