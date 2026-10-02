@@ -336,6 +336,11 @@ protected:
             this,
             menu_selector(NoclipSettingsPopup::onHazardSettings)
         );
+
+        // Temporarily disabled while the hazard configuration system is being
+        // reworked. Keep the button visible so the feature can be restored
+        // without changing the menu layout.
+        hazardButton->setEnabled(false);
         hazardButton->setPosition({m_size.width / 2.f, 78.f});
         menu->addChild(hazardButton);
 
