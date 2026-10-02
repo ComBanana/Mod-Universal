@@ -92,10 +92,21 @@ CCMenuItemSpriteExtra* createHackDefaultButton(
     sprite->setAnchorPoint({0.5f, 0.5f});
     sprite->setScale(0.8f);
 
+    // Keep the atlas sprite inside a fixed-size local container. This makes
+    // the icon's visual position independent of the sprite frame's bounds.
+    auto iconContainer = CCLayer::create();
+    if (!iconContainer)
+        return nullptr;
+
+    iconContainer->setContentSize({32.f, 32.f});
+    iconContainer->setAnchorPoint({0.5f, 0.5f});
+    sprite->setPosition(iconContainer->getContentSize() / 2.f);
+    iconContainer->addChild(sprite);
+
     auto const showButton = !areSettingsAtDefault(settingKeys);
 
     auto button = CCMenuItemExt::createSpriteExtra(
-        sprite,
+        iconContainer,
         [keys = std::move(settingKeys)](CCMenuItemSpriteExtra*) {
             resetSettingsToDefault(keys);
             ModMenu::refreshCurrentTab();
@@ -1372,12 +1383,30 @@ void ModMenu::onTab(CCObject* sender) {
 
         s_noclipRowY = cardY - cardHeight / 2.f + 30.f;
 
+        auto gearButton = static_cast<CCMenuItemSpriteExtra*>(nullptr);
         auto gearSprite = CCSprite::createWithSpriteFrameName(
             "GJ_optionsBtn02_001.png"
         );
+
         if (gearSprite) {
             gearSprite->setAnchorPoint({0.5f, 0.5f});
             gearSprite->setScale(0.72f);
+
+            auto gearContainer = CCLayer::create();
+            if (gearContainer) {
+                gearContainer->setContentSize({32.f, 32.f});
+                gearContainer->setAnchorPoint({0.5f, 0.5f});
+                gearSprite->setPosition(
+                    gearContainer->getContentSize() / 2.f
+                );
+                gearContainer->addChild(gearSprite);
+
+                gearButton = CCMenuItemSpriteExtra::create(
+                    gearContainer,
+                    this,
+                    menu_selector(ModMenu::onNoclipSettings)
+                );
+            }
         }
 
         auto noclipDefaultButton = createHackDefaultButton(
@@ -1387,13 +1416,7 @@ void ModMenu::onTab(CCObject* sender) {
         );
         s_noclipDefaultButton = noclipDefaultButton;
 
-        if (gearSprite) {
-            auto gearButton = CCMenuItemSpriteExtra::create(
-                gearSprite,
-                this,
-                menu_selector(ModMenu::onNoclipSettings)
-            );
-            gearButton->setAnchorPoint({0.5f, 0.5f});
+        if (gearButton) {
             s_noclipSettingsButton = gearButton;
             menu->addChild(gearButton);
         }
