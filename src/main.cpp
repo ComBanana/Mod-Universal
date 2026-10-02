@@ -1,5 +1,6 @@
 #include <Geode/Geode.hpp>
 #include <Geode/loader/SettingV3.hpp>
+#include <Geode/modify/PlayLayer.hpp>
 
 #include "../include/ModMenu.hpp"
 
@@ -42,6 +43,10 @@ $on_mod(Loaded) {
         [](Keybind const&, bool down, bool repeat, double) {
 
             if (!down || repeat)
+                return;
+
+            // Never expose the ModUniversal menu while a level is active.
+            if (PlayLayer::get())
                 return;
 
             // F3 is the ModUniversal menu's open/close key. The menu's
