@@ -241,10 +241,14 @@ CCLayerColor* createModernPanel(
     if (!panel)
         return nullptr;
 
-    panel->setAnchorPoint({0.5f, 0.5f});
     panel->ignoreAnchorPointForPosition(false);
+    panel->setAnchorPoint({0.5f, 0.5f});
     panel->setPosition(center);
-    parent->addChild(panel);
+
+    // Panels are structural backgrounds. Keep them below menus and labels
+    // regardless of creation order.
+    panel->setZOrder(-10);
+    parent->addChild(panel, -10);
     return panel;
 }
 
@@ -341,7 +345,6 @@ CCMenuItemSpriteExtra* createModernToggle(
 
     background->ignoreAnchorPointForPosition(false);
     background->setAnchorPoint({0.5f, 0.5f});
-    background->ignoreAnchorPointForPosition(false);
 
     auto label = createMenuLabel(
         enabled ? "ON" : "OFF",
