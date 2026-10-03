@@ -84,13 +84,13 @@ CCLayerColor* createRoundedLayerColor(
     ccColor3B color,
     CCSize size,
     float radius,
-    GLubyte opacity
+    GLubyte opacity = 255
 );
 
 void setRoundedLayerColor(
     CCLayerColor* layer,
     ccColor3B color,
-    GLubyte opacity
+    GLubyte opacity = 255
 );
 
 CCMenuItemSpriteExtra* createHackDefaultButton(
