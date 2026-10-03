@@ -100,13 +100,11 @@ CCMenuItemSpriteExtra* createHackDefaultButton(
     background->ignoreAnchorPointForPosition(false);
     background->setAnchorPoint({0.5f, 0.5f});
 
-    auto label = createMenuLabel(
-        "RESET",
-        0.40f,
-        {229, 235, 229}
-    );
+    auto label = CCLabelBMFont::create("RESET", "chatFont.fnt");
 
     if (label) {
+        label->setScale(0.40f);
+        label->setColor({229, 235, 229});
         label->setPosition(background->getContentSize() / 2.f);
         background->addChild(label);
     }
@@ -1377,7 +1375,7 @@ void ModMenu::createHeader() {
             compact
                 ? 18.f
                 : 18.f + sidebarWidth / 2.f -
-                    title->getScaledContentSize().width / 2.f,
+                    title->getContentSize().width * title->getScaleX() / 2.f,
             m_size.height - 56.f
         });
 
