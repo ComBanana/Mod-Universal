@@ -824,8 +824,12 @@ CCSize getResponsivePopupSize(float preferredWidth, float preferredHeight) {
     (void)preferredWidth;
     (void)preferredHeight;
 
-    auto const screen = getAspectReferenceSize();
-    float const aspect = getWindowAspect();
+    // Use the real window aspect ratio only to choose the composition.
+    // Popup sizing itself must use Cocos' window coordinates (points), not
+    // the EGL frame's physical pixel dimensions, otherwise the popup becomes
+    // unnecessarily huge on high-DPI/fullscreen displays.
+    auto const aspect = getWindowAspect();
+    auto const screen = CCDirector::sharedDirector()->getWinSize();
 
     float targetWidth = 1200.f;
     float targetHeight = 720.f;
