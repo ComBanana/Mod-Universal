@@ -86,38 +86,33 @@ CCMenuItemSpriteExtra* createHackDefaultButton(
     if (!menu || settingKeys.empty())
         return nullptr;
 
-    auto sprite = CCSprite::createWithSpriteFrameName(
-        "GJ_undoBtn_001.png"
+    bool const showButton = !areSettingsAtDefault(settingKeys);
+
+    auto background = CCLayerColor::create(
+        {31, 36, 33, 255},
+        58.f,
+        28.f
     );
 
-    if (!sprite)
+    if (!background)
         return nullptr;
 
-    sprite->setAnchorPoint({0.5f, 0.5f});
-    sprite->setScale(0.8f);
+    background->ignoreAnchorPointForPosition(false);
+    background->setAnchorPoint({0.5f, 0.5f});
 
-    // Use the same kind of node hierarchy as the working modern buttons:
-    // a fixed-size image container with the atlas texture centered inside.
-    auto hitbox = CCLayerColor::create(
-        {255, 255, 255, 0},
-        32.f,
-        32.f
+    auto label = createMenuLabel(
+        "RESET",
+        0.40f,
+        {229, 235, 229}
     );
 
-    if (!hitbox)
-        return nullptr;
-
-    hitbox->setAnchorPoint({0.5f, 0.5f});
-    hitbox->ignoreAnchorPointForPosition(false);
-    hitbox->setPosition({0.f, 0.f});
-
-    sprite->setPosition(hitbox->getContentSize() / 2.f);
-    hitbox->addChild(sprite);
-
-    auto const showButton = !areSettingsAtDefault(settingKeys);
+    if (label) {
+        label->setPosition(background->getContentSize() / 2.f);
+        background->addChild(label);
+    }
 
     auto button = CCMenuItemExt::createSpriteExtra(
-        hitbox,
+        background,
         [keys = std::move(settingKeys)](CCMenuItemSpriteExtra*) {
             resetSettingsToDefault(keys);
             ModMenu::refreshCurrentTab();
@@ -132,6 +127,7 @@ CCMenuItemSpriteExtra* createHackDefaultButton(
     menu->addChild(button);
     return button;
 }
+
 WeakRef<CCMenuItemSpriteExtra> s_noclipDefaultButton;
 WeakRef<CCMenuItemSpriteExtra> s_noclipSettingsButton;
 WeakRef<CCMenuItemSpriteExtra> s_noclipCheckboxButton;
@@ -164,44 +160,58 @@ void updateNoclipRowLayout() {
     float const toggleWidth =
         checkboxButton
             ? checkboxButton->getContentSize().width
-            : (compact ? 72.f : 78.f);
+            : (compact ? 72.f : 74.f);
 
-    float const iconSize = 32.f;
-    float const gap = compact ? 9.f : 12.f;
+    float const settingsWidth =
+        settingsButton
+            ? settingsButton->getContentSize().width
+            : 74.f;
+
+    float const resetWidth =
+        defaultButton
+            ? defaultButton->getContentSize().width
+            : 58.f;
+
+    float const gap = compact ? 8.f : 10.f;
 
     float const controlWidth =
         toggleWidth +
-        gap + iconSize +
-        (hasNoclipChanges ? gap + iconSize : 0.f);
+        gap + settingsWidth +
+        (hasNoclipChanges ? gap + resetWidth : 0.f);
 
-    // When the card becomes narrow, center the whole control group instead of
-    // forcing it beside the description. This prevents overlays at unusual
-    // aspect ratios and very small windows.
     bool const stackControls = panelWidth < 360.f;
+
     float const startX = stackControls
         ? (panelWidth - controlWidth) / 2.f
         : panelWidth - (compact ? 18.f : 22.f) - controlWidth;
 
-    float const undoX = startX + iconSize / 2.f;
-    float const gearX =
-        undoX + iconSize + gap + iconSize / 2.f;
-    float const checkboxX =
-        gearX + iconSize / 2.f + gap + toggleWidth / 2.f;
+    float currentX = startX;
 
     if (defaultButton) {
         defaultButton->setVisible(hasNoclipChanges);
-        defaultButton->setPosition({undoX, s_noclipRowY});
-    }
-
-    if (settingsButton) {
-        settingsButton->setPosition({
-            gearX,
+        defaultButton->setPosition({
+            currentX + resetWidth / 2.f,
             s_noclipRowY
         });
     }
 
+    if (hasNoclipChanges)
+        currentX += resetWidth + gap;
+
+    if (settingsButton) {
+        settingsButton->setPosition({
+            currentX + settingsWidth / 2.f,
+            s_noclipRowY
+        });
+    }
+
+    currentX += settingsWidth + gap;
+
     if (checkboxButton)
-        checkboxButton->setPosition({checkboxX, s_noclipRowY});
+        checkboxButton->setPosition({
+            currentX + toggleWidth / 2.f,
+            s_noclipRowY
+        });
 }
 
 void updateNoclipDefaultButton() {
@@ -1352,39 +1362,34 @@ bool ModMenu::init() {
 void ModMenu::createHeader() {
     bool const compact = isCompactMenu(m_size.width);
 
-    // PopupTitle.png already contains the Mod Universal title, so there is
-    // no second text title. Its very wide aspect ratio is preserved and the
-    // logo is positioned as a centered header element over the sidebar area.
-    auto logo = CCSprite::create("PopupTitle.png"_spr);
-
     float const sidebarWidth =
         std::clamp(m_size.width * 0.18f, 150.f, 190.f);
 
-    if (logo && (!compact || m_size.width >= 350.f)) {
-        logo->ignoreAnchorPointForPosition(false);
-        logo->setAnchorPoint({0.5f, 0.5f});
+    auto title = createMenuLabel(
+        "MOD UNIVERSAL",
+        compact ? 0.48f : 0.58f,
+        {229, 235, 229}
+    );
 
-        float const maxLogoWidth = compact
-            ? std::min(118.f, m_size.width * 0.29f)
-            : std::min(sidebarWidth - 12.f, 178.f);
-
-        float const scale =
-            maxLogoWidth /
-            std::max(1.f, logo->getContentSize().width);
-
-        logo->setScale(std::min(1.f, scale));
-
-        float const logoWidth =
-            logo->getContentSize().width * logo->getScale();
-
-        logo->setPosition({
+    if (title) {
+        title->setAnchorPoint({0.f, 0.5f});
+        title->setPosition({
             compact
-                ? std::max(12.f, logoWidth / 2.f + 8.f)
-                : 18.f + sidebarWidth / 2.f,
+                ? 18.f
+                : 18.f + sidebarWidth / 2.f -
+                    title->getScaledContentSize().width / 2.f,
             m_size.height - 56.f
         });
 
-        m_mainLayer->addChild(logo, 10);
+        title->limitLabelWidth(
+            compact
+                ? std::max(120.f, m_size.width * 0.34f)
+                : std::max(130.f, sidebarWidth - 16.f),
+            compact ? 0.48f : 0.58f,
+            0.28f
+        );
+
+        m_mainLayer->addChild(title, 10);
     }
 
     auto version = createStatusPill(
@@ -1437,8 +1442,6 @@ void ModMenu::createHeader() {
         m_size.width - (compact ? 32.f : 44.f)
     );
 }
-
-
 
 void ModMenu::createTabBar() {
     auto menu = createModernMenu(m_mainLayer);
@@ -2114,43 +2117,43 @@ void ModMenu::onTab(CCObject* sender) {
             if (toggle)
                 s_noclipCheckboxButton = toggle;
 
-            auto gearHitbox = CCLayerColor::create(
-                {255, 255, 255, 0},
-                32.f,
-                32.f
+            auto settingsBackground = CCLayerColor::create(
+                {31, 36, 33, 255},
+                74.f,
+                30.f
             );
 
-            if (gearHitbox) {
-                gearHitbox->ignoreAnchorPointForPosition(false);
-                gearHitbox->setAnchorPoint({0.5f, 0.5f});
+            if (settingsBackground) {
+                settingsBackground->ignoreAnchorPointForPosition(false);
+                settingsBackground->setAnchorPoint({0.5f, 0.5f});
 
-                auto gearSprite = CCSprite::createWithSpriteFrameName(
-                    "GJ_optionsBtn02_001.png"
+                auto settingsLabel = createMenuLabel(
+                    "SETTINGS",
+                    0.38f,
+                    {229, 235, 229}
                 );
 
-                if (gearSprite) {
-                    gearSprite->setAnchorPoint({0.5f, 0.5f});
-                    gearSprite->setScale(0.70f);
-                    gearSprite->setPosition(
-                        gearHitbox->getContentSize() / 2.f
+                if (settingsLabel) {
+                    settingsLabel->setPosition(
+                        settingsBackground->getContentSize() / 2.f
                     );
-                    gearHitbox->addChild(gearSprite);
+                    settingsBackground->addChild(settingsLabel);
                 }
 
-                auto gearButton = CCMenuItemExt::createSpriteExtra(
-                    gearHitbox,
+                auto settingsButton = CCMenuItemExt::createSpriteExtra(
+                    settingsBackground,
                     [this](CCMenuItemSpriteExtra*) {
                         this->onNoclipSettings(nullptr);
                     }
                 );
 
-                if (gearButton) {
-                    gearButton->setPosition({
-                        layout.x + layout.width / 2.f - 72.f,
+                if (settingsButton) {
+                    settingsButton->setPosition({
+                        layout.x + layout.width / 2.f - 38.f,
                         layout.y - layout.height / 2.f + 19.f
                     });
-                    contentMenu->addChild(gearButton);
-                    s_noclipSettingsButton = gearButton;
+                    contentMenu->addChild(settingsButton);
+                    s_noclipSettingsButton = settingsButton;
                 }
             }
 
