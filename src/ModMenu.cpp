@@ -219,7 +219,7 @@ void saveNoclipButtonSettings() {
 
 CCLabelBMFont* createMenuLabel(
     char const* text,
-    float scale = 0.5f,
+    float scale = 0.54f,
     ccColor3B color = {235, 235, 240}
 ) {
     auto label = CCLabelBMFont::create(text, "chatFont.fnt");
@@ -233,7 +233,7 @@ CCLabelBMFont* createMenuLabel(
 
 CCLabelBMFont* createMutedMenuLabel(
     char const* text,
-    float scale = 0.34f
+    float scale = 0.37f
 ) {
     return createMenuLabel(text, scale, {155, 158, 168});
 }
@@ -465,17 +465,12 @@ struct FeatureLayout {
 };
 
 
+
 int getFeatureColumns(float contentWidth) {
-    // Three columns are only used when the cards have enough room to remain
-    // readable. Narrow layouts fall back to one column so nothing is forced
-    // into a cramped grid; vertical overflow is handled by ScrollLayer.
-    if (contentWidth >= 760.f)
-        return 3;
-
-    if (contentWidth >= 470.f)
-        return 2;
-
-    return 1;
+    // The main workspace is intentionally a two-column feature grid. Only
+    // genuinely narrow windows fall back to a single column; vertical
+    // overflow is handled by ScrollLayer.
+    return contentWidth >= 360.f ? 2 : 1;
 }
 
 FeatureLayout getFeatureLayout(
@@ -1303,6 +1298,7 @@ public:
 } // namespace
 
 
+
 bool ModMenu::init() {
     ensureSettingsFile();
 
@@ -1345,104 +1341,93 @@ bool ModMenu::init() {
     createTabBar();
     createContentPanel();
 
-    auto footerMenu = createModernMenu(m_mainLayer);
-
-    if (footerMenu) {
-        bool const compact = isCompactMenu(m_size.width);
-        float const footerButtonWidth =
-            std::clamp(m_size.width * 0.20f, 126.f, 164.f);
-        float const footerX =
-            m_size.width - footerButtonWidth / 2.f -
-            std::clamp(m_size.width * 0.018f, 12.f, 20.f);
-
-        auto reset = createModernActionButton(
-            footerMenu,
-            "Set to Default",
-            {
-                compact && m_size.width < 430.f
-                    ? m_size.width / 2.f
-                    : footerX,
-                20.f
-            },
-            {footerButtonWidth, 34.f},
-            [this]() {
-                this->onSetAllToDefault(nullptr);
-            }
-        );
-
-        if (!reset)
-            log::warn("Could not create Set to Default button");
-    }
-
+    // The global reset action now lives in the header beside the version
+    // indicator rather than consuming permanent footer space.
     return true;
 }
 
+
 void ModMenu::createHeader() {
     bool const compact = isCompactMenu(m_size.width);
-    float const left = compact ? 18.f : 22.f;
 
+    // PopupTitle.png already contains the Mod Universal title, so there is
+    // no second text title. Its very wide aspect ratio is preserved and the
+    // logo is positioned as a centered header element over the sidebar area.
     auto logo = CCSprite::create("PopupTitle.png"_spr);
 
-    float titleX = left;
-    if (logo && !compact) {
+    float const sidebarWidth =
+        std::clamp(m_size.width * 0.18f, 150.f, 190.f);
+
+    if (logo && (!compact || m_size.width >= 350.f)) {
         logo->ignoreAnchorPointForPosition(false);
         logo->setAnchorPoint({0.5f, 0.5f});
-        logo->setPosition({left + 16.f, m_size.height - 28.f});
 
-        float const maxLogoHeight = 26.f;
+        float const maxLogoWidth = compact
+            ? std::min(150.f, m_size.width * 0.38f)
+            : std::min(sidebarWidth - 12.f, 178.f);
+
         float const scale =
-            maxLogoHeight / std::max(1.f, logo->getContentSize().height);
+            maxLogoWidth /
+            std::max(1.f, logo->getContentSize().width);
 
         logo->setScale(std::min(1.f, scale));
+
+        float const logoWidth =
+            logo->getContentSize().width * logo->getScale();
+
+        logo->setPosition({
+            compact
+                ? std::max(12.f, logoWidth / 2.f + 8.f)
+                : 18.f + sidebarWidth / 2.f,
+            m_size.height - 27.f
+        });
+
         m_mainLayer->addChild(logo, 10);
-        titleX += 38.f;
-    }
-
-    auto title = createMenuLabel(
-        "Mod Universal",
-        compact ? 0.60f : 0.70f
-    );
-
-    if (title) {
-        title->setAnchorPoint({0.f, 0.5f});
-        title->setPosition({titleX, m_size.height - 25.f});
-        title->limitLabelWidth(
-            compact ? m_size.width - 120.f : m_size.width - 190.f,
-            compact ? 0.60f : 0.70f,
-            0.45f
-        );
-        m_mainLayer->addChild(title, 10);
-    }
-
-    auto subtitle = createMutedMenuLabel(
-        "A modular toolkit for Geometry Dash",
-        compact ? 0.27f : 0.31f
-    );
-
-    if (subtitle) {
-        subtitle->setAnchorPoint({0.f, 0.5f});
-        subtitle->setPosition({titleX, m_size.height - 47.f});
-        subtitle->limitLabelWidth(
-            compact ? m_size.width - 120.f : m_size.width - 190.f,
-            compact ? 0.27f : 0.31f,
-            0.18f
-        );
-        m_mainLayer->addChild(subtitle, 10);
     }
 
     auto version = createStatusPill(
         m_mainLayer,
         {
-            m_size.width - (m_closeBtn ? 52.f : 18.f),
-            m_size.height - 26.f
+            m_size.width - 78.f,
+            m_size.height - 27.f
         },
         "v0.2.0",
         false,
         false
     );
 
-    if (version)
+    if (version) {
         version->setZOrder(9);
+
+        float const versionWidth = version->getContentSize().width;
+        float const resetWidth =
+            std::clamp(m_size.width * 0.17f, 112.f, 136.f);
+
+        float const resetRightX =
+            m_size.width - 78.f -
+            versionWidth / 2.f -
+            9.f;
+
+        float const resetCenterX =
+            resetRightX - resetWidth / 2.f;
+
+        auto headerMenu = createModernMenu(m_mainLayer);
+
+        if (headerMenu) {
+            auto reset = createModernActionButton(
+                headerMenu,
+                "Set to Default",
+                {resetCenterX, m_size.height - 27.f},
+                {resetWidth, 30.f},
+                [this]() {
+                    this->onSetAllToDefault(nullptr);
+                }
+            );
+
+            if (!reset)
+                log::warn("Could not create header Set to Default button");
+        }
+    }
 
     createModernDivider(
         m_mainLayer,
@@ -1450,6 +1435,7 @@ void ModMenu::createHeader() {
         m_size.width - (compact ? 32.f : 44.f)
     );
 }
+
 
 
 void ModMenu::createTabBar() {
@@ -1471,10 +1457,13 @@ void ModMenu::createTabBar() {
         float const sidebarWidth =
             std::clamp(m_size.width * 0.18f, 150.f, 190.f);
         float const sidebarLeft = 18.f;
-        float const sidebarTop = m_size.height - 88.f;
-        float const sidebarBottom = 58.f;
+
+        // Drop the tab panel farther below the header divider so the header
+        // reads as a distinct top bar instead of touching the navigation.
+        float const sidebarTop = m_size.height - 98.f;
+        float const sidebarBottom = 54.f;
         float const sidebarHeight =
-            std::max(170.f, sidebarTop - sidebarBottom);
+            std::max(150.f, sidebarTop - sidebarBottom);
 
         auto sidebar = createModernPanel(
             m_mainLayer,
@@ -1492,7 +1481,7 @@ void ModMenu::createTabBar() {
 
         auto section = createMenuLabel(
             "MODULES",
-            0.30f,
+            0.32f,
             {126, 131, 143}
         );
 
@@ -1500,26 +1489,61 @@ void ModMenu::createTabBar() {
             section->setAnchorPoint({0.f, 0.5f});
             section->setPosition({
                 sidebarLeft + 13.f,
-                sidebarTop - 19.f
+                sidebarTop - 18.f
             });
             m_mainLayer->addChild(section, 5);
         }
 
-        float const itemWidth = sidebarWidth - 24.f;
-        float const startY = sidebarTop - 51.f;
-        float const itemHeight = std::clamp(
-            sidebarHeight * 0.115f,
-            38.f,
-            44.f
-        );
-        float const itemGap = std::clamp(
-            sidebarHeight * 0.025f,
-            6.f,
-            10.f
+        float const viewportLeft = sidebarLeft + 8.f;
+        float const viewportBottom = sidebarBottom + 9.f;
+        float const viewportWidth = sidebarWidth - 16.f;
+        float const viewportTop = sidebarTop - 36.f;
+        float const viewportHeight =
+            std::max(76.f, viewportTop - viewportBottom);
+
+        // The sidebar navigation itself is scrollable. On tall layouts all
+        // five tabs fit; on short/tall aspect ratios the same controls remain
+        // usable instead of shrinking into unreadable buttons.
+        auto tabScroll = geode::ScrollLayer::create(
+            {viewportWidth, viewportHeight},
+            true,
+            false
         );
 
+        if (!tabScroll)
+            return;
+
+        tabScroll->setPosition({
+            viewportLeft,
+            viewportBottom
+        });
+        tabScroll->setZOrder(3);
+        m_mainLayer->addChild(tabScroll, 3);
+
+        float const itemWidth = viewportWidth - 6.f;
+        float const itemHeight = 36.f;
+        float const itemGap = 6.f;
+        float const contentHeight =
+            8.f +
+            5.f * itemHeight +
+            4.f * itemGap +
+            8.f;
+
+        tabScroll->m_contentLayer->setContentSize({
+            viewportWidth,
+            contentHeight
+        });
+
+        auto tabContentMenu =
+            createModernMenu(tabScroll->m_contentLayer);
+
+        if (!tabContentMenu)
+            return;
+
         for (int i = 0; i < 5; ++i) {
-            float const y = startY - i * (itemHeight + itemGap);
+            float const y =
+                contentHeight - 8.f - itemHeight / 2.f -
+                i * (itemHeight + itemGap);
 
             auto item = CCLayerColor::create(
                 i == m_currentTab
@@ -1537,20 +1561,20 @@ void ModMenu::createTabBar() {
 
             auto label = createMenuLabel(
                 tabs[i],
-                0.43f,
+                0.46f,
                 {220, 223, 229}
             );
 
             if (label) {
                 label->setAnchorPoint({0.f, 0.5f});
                 label->setPosition({
-                    28.f,
+                    25.f,
                     itemHeight / 2.f
                 });
                 label->setTag(7002);
                 label->limitLabelWidth(
-                    itemWidth - 42.f,
-                    0.43f,
+                    itemWidth - 38.f,
+                    0.46f,
                     0.18f
                 );
                 item->addChild(label);
@@ -1559,14 +1583,11 @@ void ModMenu::createTabBar() {
             auto accent = CCLayerColor::create(
                 {75, 190, 138, 255},
                 4.f,
-                itemHeight - 14.f
+                itemHeight - 12.f
             );
 
             if (accent) {
-                accent->setPosition({
-                    6.f,
-                    7.f
-                });
+                accent->setPosition({6.f, 6.f});
                 accent->setTag(7003);
                 accent->setVisible(i == m_currentTab);
                 item->addChild(accent, 2);
@@ -1583,10 +1604,23 @@ void ModMenu::createTabBar() {
 
             button->setTag(i);
             button->setPosition({
-                sidebarLeft + sidebarWidth / 2.f,
+                viewportWidth / 2.f,
                 y
             });
-            menu->addChild(button);
+            tabContentMenu->addChild(button);
+        }
+
+        if (contentHeight > viewportHeight + 1.f) {
+            auto bar = geode::Scrollbar::create(tabScroll);
+            if (bar) {
+                bar->setAnchorPoint({0.5f, 0.5f});
+                bar->setPosition({
+                    sidebarLeft + sidebarWidth - 7.f,
+                    viewportBottom + viewportHeight / 2.f
+                });
+                bar->setZOrder(8);
+                m_mainLayer->addChild(bar, 8);
+            }
         }
 
         return;
@@ -1605,7 +1639,7 @@ void ModMenu::createTabBar() {
                 ? ccColor4B{50, 54, 63, 255}
                 : ccColor4B{43, 46, 54, 255},
             std::max(72.f, width),
-            grid.height
+            grid.height - 2.f
         );
 
         if (!item)
@@ -1615,9 +1649,9 @@ void ModMenu::createTabBar() {
         item->setAnchorPoint({0.5f, 0.5f});
 
         float const labelScale =
-            grid.columns == 2 ? 0.34f :
-            grid.columns == 3 ? 0.38f :
-            0.42f;
+            grid.columns == 2 ? 0.37f :
+            grid.columns == 3 ? 0.41f :
+            0.45f;
 
         auto label = createMenuLabel(
             tabs[i],
@@ -1645,7 +1679,7 @@ void ModMenu::createTabBar() {
         if (accent) {
             accent->setPosition({
                 5.f,
-                grid.height - 6.f
+                item->getContentSize().height - 6.f
             });
             accent->setTag(7003);
             accent->setVisible(i == m_currentTab);
@@ -1826,7 +1860,7 @@ void ModMenu::onTab(CCObject* sender) {
             "Misc",
             "Settings"
         })[tab],
-        compact ? 0.56f : 0.63f
+        compact ? 0.60f : 0.67f
     );
 
     if (headerTitle) {
@@ -1850,7 +1884,7 @@ void ModMenu::onTab(CCObject* sender) {
 
     auto subtitle = createMutedMenuLabel(
         descriptions[tab],
-        compact ? 0.27f : 0.30f
+        compact ? 0.30f : 0.33f
     );
 
     if (subtitle) {
