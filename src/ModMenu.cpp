@@ -118,7 +118,7 @@ CCMenuItemSpriteExtra* createHackDefaultButton(
     auto label = CCLabelBMFont::create("RESET", "chatFont.fnt");
 
     if (label) {
-        label->setScale(0.40f);
+        label->setScale(0.36f);
         label->setColor({229, 235, 229});
         label->setPosition(background->getContentSize() / 2.f);
         background->addChild(label);
@@ -678,7 +678,7 @@ CCLayerColor* createStatusPill(
 
     auto label = createMenuLabel(
         text,
-        0.31f,
+        0.29f,
         active
             ? ccColor3B{229, 235, 229}
             : ccColor3B{
@@ -729,7 +729,7 @@ CCLayerColor* createFeatureCard(
 
     auto title = createMenuLabel(
         titleText,
-        0.57f * scale,
+        0.48f * scale,
         {229, 235, 229}
     );
 
@@ -741,15 +741,15 @@ CCLayerColor* createFeatureCard(
         });
         title->limitLabelWidth(
             size.width - 120.f * scale,
-            0.57f * scale,
-            0.28f * scale
+            0.48f * scale,
+            0.23f * scale
         );
         card->addChild(title, 2);
     }
 
     auto desc = createMenuLabel(
         description,
-        0.29f * scale,
+        0.30f * scale,
         {229, 235, 229}
     );
 
@@ -760,9 +760,9 @@ CCLayerColor* createFeatureCard(
             82.5f * scale
         });
         desc->limitLabelWidth(
-            size.width - 150.f * scale,
-            0.29f * scale,
-            0.14f * scale
+            290.f * scale,
+            0.30f * scale,
+            0.15f * scale
         );
         card->addChild(desc, 2);
     }
@@ -771,8 +771,11 @@ CCLayerColor* createFeatureCard(
         auto pill = createStatusPill(
             card,
             {
-                size.width - 48.f * scale,
-                112.f * scale
+                size.width -
+                    ((std::strcmp(statusText, "ON") == 0 ? 18.f : 28.f) +
+                    (std::strcmp(statusText, "ON") == 0 ? 36.f : 31.f)) *
+                    scale,
+                109.f * scale
             },
             statusText,
             active,
@@ -818,24 +821,14 @@ float getWindowAspect() {
 }
 
 CCSize getResponsivePopupSize(float preferredWidth, float preferredHeight) {
-    (void)preferredWidth;
-    (void)preferredHeight;
-
-    // Use the real window aspect ratio only to choose the composition.
-    // Popup sizing itself must use Cocos' window coordinates (points), not
-    // the EGL frame's physical pixel dimensions, otherwise the popup becomes
-    // unnecessarily huge on high-DPI/fullscreen displays.
+    // Use the real window aspect ratio to decide orientation, while keeping
+    // the requested popup's own reference size. Popup dimensions are scaled
+    // in Cocos window points so high-DPI physical pixels do not inflate them.
     auto const aspect = getWindowAspect();
     auto const screen = CCDirector::sharedDirector()->getWinSize();
 
-    float targetWidth = 1200.f;
-    float targetHeight = 720.f;
-
-    if (aspect < 0.95f) {
-        // Portrait uses the dedicated 430x760 Figma compact composition.
-        targetWidth = 430.f;
-        targetHeight = 760.f;
-    }
+    float const targetWidth = preferredWidth;
+    float const targetHeight = preferredHeight;
 
     float const availableWidth = std::max(220.f, screen.width - 24.f);
     float const availableHeight = std::max(180.f, screen.height - 24.f);
@@ -1604,7 +1597,7 @@ void ModMenu::createHeader() {
 
     auto version = createMenuLabel(
         "v0.2.0",
-        0.40f * scale,
+        0.36f * scale,
         {229, 235, 229}
     );
 
@@ -1704,7 +1697,7 @@ void ModMenu::createTabBar() {
 
             auto label = createMenuLabel(
                 tabs[i],
-                0.31f * scale,
+                0.29f * scale,
                 {229, 235, 229}
             );
 
@@ -1715,8 +1708,8 @@ void ModMenu::createTabBar() {
                 );
                 label->limitLabelWidth(
                     itemWidth - 10.f * scale,
-                    0.31f * scale,
-                    0.10f * scale
+                    0.29f * scale,
+                    0.09f * scale
                 );
                 item->addChild(label);
             }
@@ -1768,7 +1761,7 @@ void ModMenu::createTabBar() {
 
     auto modules = createMenuLabel(
         "MODULES",
-        0.38f * scale,
+        0.34f * scale,
         {229, 235, 229}
     );
 
@@ -1802,7 +1795,7 @@ void ModMenu::createTabBar() {
 
         auto label = createMenuLabel(
             tabs[i],
-            0.46f * scale,
+            0.42f * scale,
             {229, 235, 229}
         );
 
@@ -2054,7 +2047,7 @@ void ModMenu::onTab(CCObject* sender) {
 
     auto heading = createMenuLabel(
         headingNames[tab],
-        0.67f * scale,
+        0.56f * scale,
         {229, 235, 229}
     );
 
@@ -2066,15 +2059,15 @@ void ModMenu::onTab(CCObject* sender) {
         });
         heading->limitLabelWidth(
             width - 52.f * scale,
-            0.67f * scale,
-            0.35f * scale
+            0.56f * scale,
+            0.30f * scale
         );
         m_contentPanel->addChild(heading, 8);
     }
 
     auto subtitle = createMenuLabel(
         descriptions[tab],
-        0.33f * scale,
+        0.36f * scale,
         {229, 235, 229}
     );
 
@@ -2086,8 +2079,8 @@ void ModMenu::onTab(CCObject* sender) {
         });
         subtitle->limitLabelWidth(
             width - 52.f * scale,
-            0.33f * scale,
-            0.16f * scale
+            0.36f * scale,
+            0.18f * scale
         );
         m_contentPanel->addChild(subtitle, 8);
     }
