@@ -531,7 +531,7 @@ CCLayerColor* createStatusPill(
 
     auto label = createMenuLabel(
         text,
-        0.29f,
+        0.31f,
         active
             ? ccColor3B{18, 28, 24}
             : ccColor3B{
@@ -550,6 +550,7 @@ CCLayerColor* createStatusPill(
     parent->addChild(pill, 4);
     return pill;
 }
+
 
 
 CCLayerColor* createFeatureCard(
@@ -597,7 +598,7 @@ CCLayerColor* createFeatureCard(
 
     auto section = createMenuLabel(
         sectionLabel,
-        narrow ? 0.25f : 0.27f,
+        veryNarrow ? 0.25f : narrow ? 0.27f : 0.30f,
         {133, 137, 148}
     );
 
@@ -611,10 +612,10 @@ CCLayerColor* createFeatureCard(
     }
 
     float const titleScale =
-        veryNarrow ? 0.42f :
-        narrow ? 0.46f :
-        size.width < 520.f ? 0.49f :
-        0.53f;
+        veryNarrow ? 0.46f :
+        narrow ? 0.50f :
+        size.width < 520.f ? 0.53f :
+        0.57f;
 
     auto title = createMenuLabel(
         titleText,
@@ -632,16 +633,16 @@ CCLayerColor* createFeatureCard(
         title->limitLabelWidth(
             std::max(96.f, size.width - 164.f),
             titleScale,
-            0.32f
+            0.30f
         );
 
         card->addChild(title, 2);
     }
 
     float const descScale =
-        veryNarrow ? 0.21f :
-        narrow ? 0.23f :
-        0.27f;
+        veryNarrow ? 0.24f :
+        narrow ? 0.25f :
+        0.29f;
 
     auto desc = createMutedMenuLabel(
         description,
@@ -651,10 +652,11 @@ CCLayerColor* createFeatureCard(
     if (desc) {
         desc->setAnchorPoint({0.f, 0.5f});
 
-        // Leave the bottom strip clear on narrow cards because the live
-        // control group sits there. Wider cards can use the original compact
-        // description position.
-        float const descY = narrow ? size.height - 72.f : 22.f;
+        float const descY =
+            narrow
+                ? size.height - 72.f
+                : 22.f;
+
         desc->setPosition({24.f, descY});
 
         desc->limitLabelWidth(
@@ -1363,7 +1365,7 @@ void ModMenu::createHeader() {
         logo->setAnchorPoint({0.5f, 0.5f});
 
         float const maxLogoWidth = compact
-            ? std::min(150.f, m_size.width * 0.38f)
+            ? std::min(118.f, m_size.width * 0.29f)
             : std::min(sidebarWidth - 12.f, 178.f);
 
         float const scale =
