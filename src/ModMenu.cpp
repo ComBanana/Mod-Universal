@@ -294,53 +294,52 @@ CCLayerColor* createRoundedLayerColor(
         std::min(size.width, size.height) / 2.f
     );
 
-    std::vector<CCPoint> points;
-    constexpr int segments = 8;
-    constexpr float pi = 3.14159265359f;
-
-    auto appendCorner = [&](CCPoint center, float startAngle) {
-        for (int i = 0; i <= segments; ++i) {
-            float const angle =
-                startAngle +
-                pi / 2.f *
-                    static_cast<float>(i) /
-                    static_cast<float>(segments);
-
-            points.push_back({
-                center.x + std::cos(angle) * radiusClamped,
-                center.y + std::sin(angle) * radiusClamped
-            });
-        }
+    ccColor4F const fill = {
+        color.r / 255.f,
+        color.g / 255.f,
+        color.b / 255.f,
+        opacity / 255.f
     };
 
-    appendCorner(
-        {radiusClamped, radiusClamped},
-        pi
-    );
-    appendCorner(
-        {size.width - radiusClamped, radiusClamped},
-        pi * 1.5f
-    );
-    appendCorner(
-        {size.width - radiusClamped, size.height - radiusClamped},
-        0.f
-    );
-    appendCorner(
-        {radiusClamped, size.height - radiusClamped},
-        pi * 0.5f
-    );
+    // Build the rounded rectangle from two clean rectangles plus four
+    // circles. This avoids the triangulation artifacts from the old polygon
+    // approximation that could make buttons look like pointed/sideways
+    // shapes on some Geometry Dash configurations.
+    if (size.width > radiusClamped * 2.f) {
+        draw->drawRect(
+            {radiusClamped, 0.f},
+            {size.width - radiusClamped, size.height},
+            fill,
+            0.f,
+            {0.f, 0.f, 0.f, 0.f}
+        );
+    }
 
-    draw->drawPolygon(
-        points.data(),
-        static_cast<unsigned int>(points.size()),
-        {
-            color.r / 255.f,
-            color.g / 255.f,
-            color.b / 255.f,
-            opacity / 255.f
-        },
-        0.f,
-        {0.f, 0.f, 0.f, 0.f}
+    if (size.height > radiusClamped * 2.f) {
+        draw->drawRect(
+            {0.f, radiusClamped},
+            {size.width, size.height - radiusClamped},
+            fill,
+            0.f,
+            {0.f, 0.f, 0.f, 0.f}
+        );
+    }
+
+    draw->drawDot({radiusClamped, radiusClamped}, radiusClamped, fill);
+    draw->drawDot(
+        {size.width - radiusClamped, radiusClamped},
+        radiusClamped,
+        fill
+    );
+    draw->drawDot(
+        {size.width - radiusClamped, size.height - radiusClamped},
+        radiusClamped,
+        fill
+    );
+    draw->drawDot(
+        {radiusClamped, size.height - radiusClamped},
+        radiusClamped,
+        fill
     );
 
     layer->addChild(draw, 0);
@@ -380,50 +379,48 @@ void setRoundedLayerColor(
         std::min(size.width, size.height) / 2.f
     );
 
-    std::vector<CCPoint> points;
-    constexpr int segments = 8;
-    constexpr float pi = 3.14159265359f;
-
-    auto appendCorner = [&](CCPoint center, float startAngle) {
-        for (int i = 0; i <= segments; ++i) {
-            float const angle =
-                startAngle +
-                pi / 2.f *
-                    static_cast<float>(i) /
-                    static_cast<float>(segments);
-
-            points.push_back({
-                center.x + std::cos(angle) * radiusClamped,
-                center.y + std::sin(angle) * radiusClamped
-            });
-        }
+    ccColor4F const fill = {
+        color.r / 255.f,
+        color.g / 255.f,
+        color.b / 255.f,
+        opacity / 255.f
     };
 
-    appendCorner({radiusClamped, radiusClamped}, pi);
-    appendCorner(
-        {size.width - radiusClamped, radiusClamped},
-        pi * 1.5f
-    );
-    appendCorner(
-        {size.width - radiusClamped, size.height - radiusClamped},
-        0.f
-    );
-    appendCorner(
-        {radiusClamped, size.height - radiusClamped},
-        pi * 0.5f
-    );
+    if (size.width > radiusClamped * 2.f) {
+        draw->drawRect(
+            {radiusClamped, 0.f},
+            {size.width - radiusClamped, size.height},
+            fill,
+            0.f,
+            {0.f, 0.f, 0.f, 0.f}
+        );
+    }
 
-    draw->drawPolygon(
-        points.data(),
-        static_cast<unsigned int>(points.size()),
-        {
-            color.r / 255.f,
-            color.g / 255.f,
-            color.b / 255.f,
-            opacity / 255.f
-        },
-        0.f,
-        {0.f, 0.f, 0.f, 0.f}
+    if (size.height > radiusClamped * 2.f) {
+        draw->drawRect(
+            {0.f, radiusClamped},
+            {size.width, size.height - radiusClamped},
+            fill,
+            0.f,
+            {0.f, 0.f, 0.f, 0.f}
+        );
+    }
+
+    draw->drawDot({radiusClamped, radiusClamped}, radiusClamped, fill);
+    draw->drawDot(
+        {size.width - radiusClamped, radiusClamped},
+        radiusClamped,
+        fill
+    );
+    draw->drawDot(
+        {size.width - radiusClamped, size.height - radiusClamped},
+        radiusClamped,
+        fill
+    );
+    draw->drawDot(
+        {radiusClamped, size.height - radiusClamped},
+        radiusClamped,
+        fill
     );
 }
 
