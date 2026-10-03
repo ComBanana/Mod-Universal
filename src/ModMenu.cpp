@@ -120,8 +120,6 @@ CCLayerColor* createRoundedLayerColor(
         opacity / 255.f
     };
 
-    // Compose the rounded rectangle from two rectangles and four true
-    // circles. This gives clean, symmetric Figma-style corners on GD 2.2081.
     if (size.width > radiusClamped * 2.f) {
         draw->drawRect(
             {radiusClamped, 0.f},
@@ -178,6 +176,7 @@ CCLayerColor* createRoundedLayerColor(
     layer->addChild(draw, 0);
     return layer;
 }
+
 void setRoundedLayerColor(
     CCLayerColor* layer,
     ccColor3B color,
@@ -271,6 +270,14 @@ void setRoundedLayerColor(
         32
     );
 }
+
+
+void setRoundedLayerColor(
+    CCLayerColor* layer,
+    ccColor3B color,
+    GLubyte opacity = 255
+);
+
 CCLayerColor* createModernPanel(
     CCNode* parent,
     CCPoint center,
