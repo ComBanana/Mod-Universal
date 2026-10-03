@@ -1653,7 +1653,7 @@ void ModMenu::createTabBar() {
         "Settings"
     };
 
-    bool const compact = isCompactMenu(m_size.width);
+    bool const compact = isCompactMenu();
 
     if (compact) {
         float const scale = std::min(
@@ -1834,7 +1834,7 @@ void ModMenu::createTabBar() {
 }
 
 void ModMenu::createContentPanel() {
-    bool const compact = isCompactMenu(m_size.width);
+    bool const compact = isCompactMenu();
 
     if (compact) {
         float const scale = std::min(
@@ -2008,7 +2008,7 @@ void ModMenu::onTab(CCObject* sender) {
         m_size.width / 1200.f
     );
 
-    bool const compact = isCompactMenu(m_size.width);
+    bool const compact = isCompactMenu();
 
     float const width = m_contentPanel->getContentSize().width;
     float const height = m_contentPanel->getContentSize().height;
