@@ -1725,128 +1725,131 @@ void ModMenu::onTab(CCObject* sender) {
 
         auto tabMenu = static_cast<CCMenu*>(btn->getParent());
 
-        for (auto* child : CCArrayExt<CCNode*>(tabMenu->getChildren())) {
-            auto button = typeinfo_cast<CCMenuItemSpriteExtra*>(child);
-            if (!button)
-                continue;
+        if (tabMenu) {
+            for (auto* child : CCArrayExt<CCNode*>(tabMenu->getChildren())) {
+                auto button =
+                    typeinfo_cast<CCMenuItemSpriteExtra*>(child);
+                if (!button)
+                    continue;
 
-            auto background =
-                typeinfo_cast<CCLayerColor*>(button->getNormalImage());
-            if (!background)
-                continue;
+                auto background =
+                    typeinfo_cast<CCLayerColor*>(button->getNormalImage());
+                if (!background)
+                    continue;
 
-            bool const selected = button == btn;
+                bool const selected = button == btn;
 
-            background->setColor(
-                selected
-                    ? ccColor3B{50, 54, 63}
-                    : ccColor3B{43, 46, 54}
-            );
-
-            auto label = typeinfo_cast<CCLabelBMFont*>(
-                background->getChildByTag(7002)
-            );
-
-            if (label) {
-                label->setColor(
+                setRoundedLayerColor(
+                    background,
                     selected
-                        ? ccColor3B{229, 235, 229}
-                        : ccColor3B{229, 235, 229}
+                        ? ccColor3B{31, 64, 46}
+                        : ccColor3B{24, 27, 26},
+                    255
                 );
-            }
 
-            auto accent = background->getChildByTag(7003);
-            if (accent)
-                accent->setVisible(selected);
+                auto label = typeinfo_cast<CCLabelBMFont*>(
+                    background->getChildByTag(7002)
+                );
+
+                if (label) {
+                    label->setColor(
+                        selected
+                            ? ccColor3B{229, 235, 229}
+                            : ccColor3B{210, 216, 210}
+                    );
+                }
+            }
         }
     }
 
     if (!m_contentPanel)
         return;
 
-    // Rebuild the fixed header + scroll viewport for the newly selected tab.
     m_contentPanel->removeAllChildrenWithCleanup(true);
     m_contentScroll = nullptr;
 
+    float const scale = std::min(
+        1.f,
+        m_size.width / 1200.f
+    );
+
+    bool const compact = isCompactMenu(m_size.width);
+
     float const width = m_contentPanel->getContentSize().width;
     float const height = m_contentPanel->getContentSize().height;
-    bool const compact = isCompactMenu(m_size.width);
 
     auto background = createModernPanel(
         m_contentPanel,
-        {width / 2.f, height / 2.f},
+        {
+            width / 2.f,
+            height / 2.f
+        },
         {width, height},
-        {24, 26, 32},
+        {19, 22, 20},
         255
     );
 
-    if (!background)
-        return;
+    if (background)
+        background->setZOrder(-10);
 
-    auto headerTitle = createMenuLabel(
-        (std::array<char const*, 5>{
-            "Player",
-            "Visuals",
-            "Creator",
-            "Misc",
-            "Settings"
-        })[tab],
-        compact ? 0.60f : 0.67f
-    );
-
-    if (headerTitle) {
-        headerTitle->setAnchorPoint({0.f, 0.5f});
-        headerTitle->setPosition({20.f, height - 25.f});
-        headerTitle->limitLabelWidth(
-            width - 40.f,
-            compact ? 0.56f : 0.63f,
-            0.42f
-        );
-        m_contentPanel->addChild(headerTitle, 8);
-    }
+    constexpr char const* tabNames[] = {
+        "Player",
+        "Visuals",
+        "Creator",
+        "Misc",
+        "Settings"
+    };
 
     constexpr char const* descriptions[] = {
-        "Gameplay tools, movement helpers, and player controls.",
-        "Visual controls and display utilities.",
-        "Creator and editor utilities.",
-        "Quality-of-life and utility modules.",
-        "Interface and Mod Universal configuration."
+        "Movement and gameplay tools",
+        "Visual controls and display utilities",
+        "Creator and editor utilities",
+        "Quality-of-life and utility modules",
+        "Interface and Mod Universal configuration"
     };
+
+    auto heading = createMenuLabel(
+        tabNames[tab],
+        0.67f * scale,
+        {229, 235, 229}
+    );
+
+    if (heading) {
+        heading->setAnchorPoint({0.f, 0.5f});
+        heading->setPosition({
+            compact ? 20.f : 26.f * scale,
+            height - (34.f * scale)
+        });
+        heading->limitLabelWidth(
+            width - 52.f * scale,
+            0.67f * scale,
+            0.35f * scale
+        );
+        m_contentPanel->addChild(heading, 8);
+    }
 
     auto subtitle = createMutedMenuLabel(
         descriptions[tab],
-        compact ? 0.30f : 0.33f
+        0.33f * scale
     );
 
     if (subtitle) {
         subtitle->setAnchorPoint({0.f, 0.5f});
-        subtitle->setPosition({20.f, height - 47.f});
+        subtitle->setPosition({
+            compact ? 20.f : 26.f * scale,
+            height - (58.f * scale)
+        });
         subtitle->limitLabelWidth(
-            width - 40.f,
-            compact ? 0.27f : 0.30f,
-            0.16f
+            width - 52.f * scale,
+            0.33f * scale,
+            0.16f * scale
         );
         m_contentPanel->addChild(subtitle, 8);
     }
 
-    createModernDivider(
-        m_contentPanel,
-        {width / 2.f, height - 67.f},
-        width - 40.f
-    );
-
-    constexpr char const* sections[] = {
-        "GAMEPLAY",
-        "VISUALS",
-        "CREATOR",
-        "MISC",
-        "SETTINGS"
-    };
-
     struct FeatureSpec {
         char const* title;
         char const* description;
-        char const* section;
         bool active;
         char const* status;
     };
@@ -1857,24 +1860,27 @@ void ModMenu::onTab(CCObject* sender) {
         features = {
             {
                 "Noclip",
-                "Pass through selected level geometry and hazards.",
-                "GAMEPLAY",
-                true,
+                "Move through blocks and hazards.",
+                Mod::get()->getSettingValue<bool>("noclip-enabled"),
                 Mod::get()->getSettingValue<bool>("noclip-enabled")
                     ? "ON"
                     : "OFF"
             },
             {
                 "Speedhack",
-                "Adjust the game's global speed.",
-                "GAMEPLAY",
+                "Change gameplay speed.",
                 false,
                 "SOON"
             },
             {
                 "Show Hitboxes",
-                "Display player collision boundaries.",
-                "DEBUG",
+                "Display collision hitboxes.",
+                false,
+                "SOON"
+            },
+            {
+                "Player Trail",
+                "Visual player trail controls.",
                 false,
                 "SOON"
             }
@@ -1884,15 +1890,13 @@ void ModMenu::onTab(CCObject* sender) {
         features = {
             {
                 "Player Trail",
-                "Player trail controls.",
-                "PLAYER",
+                "Visual player trail controls.",
                 false,
                 "SOON"
             },
             {
                 "Object Visibility",
                 "Hide or simplify level visuals.",
-                "LEVEL",
                 false,
                 "SOON"
             }
@@ -1903,14 +1907,12 @@ void ModMenu::onTab(CCObject* sender) {
             {
                 "Practice Tools",
                 "Creator-focused level testing tools.",
-                "CREATOR",
                 false,
                 "SOON"
             },
             {
                 "Editor Utilities",
                 "Extra editor workflow helpers.",
-                "CREATOR",
                 false,
                 "SOON"
             }
@@ -1921,14 +1923,12 @@ void ModMenu::onTab(CCObject* sender) {
             {
                 "Quick Utilities",
                 "Everyday Geometry Dash conveniences.",
-                "MISC",
                 false,
                 "SOON"
             },
             {
                 "Diagnostics",
                 "Useful information and debug helpers.",
-                "DEBUG",
                 false,
                 "SOON"
             }
@@ -1938,136 +1938,147 @@ void ModMenu::onTab(CCObject* sender) {
         features = {
             {
                 "Interface",
-                "Menu keybind and interface behavior are controlled by Geode.",
-                "SETTINGS",
+                "Menu keybind and interface behavior.",
                 true,
                 "READY"
             }
         };
     }
 
-    float const viewportPad = std::clamp(width * 0.025f, 10.f, 18.f);
-    float const scrollY = 10.f;
-    float const scrollHeight =
-        std::max(82.f, height - 82.f);
+    float const cardWidth = compact
+        ? std::max(0.f, width - 40.f)
+        : 430.f * scale;
 
-    // Reserve a little breathing room on the right for the scrollbar / edge
-    // affordance without making cards depend on one exact popup width.
-    float const scrollbarSpace = width >= 600.f ? 12.f : 8.f;
-    float const viewportWidth = std::max(
-        120.f,
-        width - viewportPad * 2.f - scrollbarSpace
-    );
+    float const cardHeight = compact
+        ? 138.f * scale
+        : 138.f * scale;
 
-    auto scroll = geode::ScrollLayer::create(
-        {viewportWidth, scrollHeight},
-        true,
-        true
-    );
+    float const gapX = 24.f * scale;
+    float const gapY = 18.f * scale;
 
-    if (!scroll)
-        return;
+    int const columns = compact ? 1 : 2;
 
-    scroll->setPosition({viewportPad, scrollY});
-    scroll->setZOrder(5);
-    m_contentPanel->addChild(scroll, 5);
-    m_contentScroll = scroll;
+    float const usableWidth = compact
+        ? width - 40.f
+        : 884.f * scale;
 
-    int const columns = getFeatureColumns(viewportWidth);
-    float const gap = std::clamp(viewportWidth * 0.018f, 10.f, 14.f);
-    float const cardHeight =
-        columns == 1 ? 136.f :
-        columns == 2 ? 116.f :
-        112.f;
+    float const actualCardWidth = compact
+        ? usableWidth
+        : (usableWidth - gapX) / 2.f;
 
-    int const rowCount =
-        static_cast<int>((features.size() + columns - 1) / columns);
+    float const firstX = compact
+        ? width / 2.f
+        : 241.f * scale;
 
-    float const extraBottomSpace = tab == 4 ? 56.f : 0.f;
+    float const secondX =
+        compact
+            ? firstX
+            : 695.f * scale;
 
-    float const contentHeight =
-        18.f +
-        rowCount * cardHeight +
-        std::max(0, rowCount - 1) * gap +
-        18.f +
-        extraBottomSpace;
+    float const firstY =
+        compact
+            ? height - 170.f * scale
+            : 415.f * scale;
 
-    scroll->m_contentLayer->setContentSize({
-        viewportWidth,
-        std::max(scrollHeight, contentHeight)
-    });
+    float const secondRowY =
+        compact
+            ? firstY - cardHeight - gapY
+            : 259.f * scale;
 
-    // All feature cards and their controls live inside the scroll content
-    // layer. The visible viewport never needs to know how many rows exist.
-    auto contentMenu = createModernMenu(scroll->m_contentLayer);
+    auto contentMenu = createModernMenu(m_contentPanel);
     if (!contentMenu)
         return;
-
-    float const featureTop =
-        std::max(scrollHeight, contentHeight) - 18.f;
 
     for (int i = 0; i < static_cast<int>(features.size()); ++i) {
         auto const& feature = features[i];
 
-        auto layout = getFeatureLayout(
-            viewportWidth,
-            featureTop,
-            cardHeight,
-            i,
-            columns,
-            gap
-        );
+        int const row = i / columns;
+        int const column = i % columns;
 
-        createFeatureCard(
-            scroll->m_contentLayer,
-            {layout.x, layout.y},
-            {layout.width, layout.height},
+        float const centerX =
+            compact
+                ? firstX
+                : column == 0
+                    ? firstX
+                    : secondX;
+
+        float const centerY =
+            compact
+                ? firstY - row * (cardHeight + gapY)
+                : row == 0
+                    ? firstY
+                    : secondRowY;
+
+        auto card = createFeatureCard(
+            m_contentPanel,
+            {centerX, centerY},
+            {actualCardWidth, cardHeight},
             feature.title,
             feature.description,
-            feature.section,
+            nullptr,
             feature.active,
             feature.status
         );
 
+        if (!card)
+            continue;
+
         if (tab == 0 && i == 0) {
-            auto toggle = createModernToggle(
-                contentMenu,
-                "noclip-enabled",
-                {
-                    layout.x + layout.width / 2.f - 22.f,
-                    layout.y - layout.height / 2.f + 19.f
-                },
-                {74.f, 30.f}
+            // The status pill is the visible control. It keeps the Figma card
+            // visually clean while remaining a real Noclip toggle.
+            float const statusWidth = 72.f * scale;
+            float const statusHeight = 26.f * scale;
+
+            auto toggleHitbox = CCLayerColor::create(
+                {255, 255, 255, 0},
+                statusWidth,
+                statusHeight
             );
 
-            if (toggle)
-                s_noclipCheckboxButton = toggle;
+            if (toggleHitbox) {
+                toggleHitbox->ignoreAnchorPointForPosition(false);
+                toggleHitbox->setAnchorPoint({0.5f, 0.5f});
 
-            auto settingsBackground = CCLayerColor::create(
-                {31, 36, 33, 255},
-                74.f,
-                30.f
-            );
+                auto toggleButton = CCMenuItemExt::createSpriteExtra(
+                    toggleHitbox,
+                    [](CCMenuItemSpriteExtra*) {
+                        bool const next =
+                            !Mod::get()->getSettingValue<bool>(
+                                "noclip-enabled"
+                            );
 
-            if (settingsBackground) {
-                settingsBackground->ignoreAnchorPointForPosition(false);
-                settingsBackground->setAnchorPoint({0.5f, 0.5f});
-
-                auto settingsLabel = createMenuLabel(
-                    "SETTINGS",
-                    0.38f,
-                    {229, 235, 229}
+                        ModMenu::setNoclipEnabled(next);
+                        saveNoclipButtonSettings();
+                        ModMenu::refreshCurrentTab();
+                    }
                 );
 
-                if (settingsLabel) {
-                    settingsLabel->setPosition(
-                        settingsBackground->getContentSize() / 2.f
-                    );
-                    settingsBackground->addChild(settingsLabel);
+                if (toggleButton) {
+                    toggleButton->setPosition({
+                        centerX + actualCardWidth / 2.f -
+                            48.f * scale,
+                        centerY +
+                            cardHeight / 2.f -
+                            29.f * scale
+                    });
+                    contentMenu->addChild(toggleButton, 12);
                 }
+            }
+
+            // The main text area opens the detailed Noclip settings popup.
+            // It is transparent so it does not alter the Figma visual.
+            auto settingsHitbox = CCLayerColor::create(
+                {255, 255, 255, 0},
+                300.f * scale,
+                62.f * scale
+            );
+
+            if (settingsHitbox) {
+                settingsHitbox->ignoreAnchorPointForPosition(false);
+                settingsHitbox->setAnchorPoint({0.5f, 0.5f});
 
                 auto settingsButton = CCMenuItemExt::createSpriteExtra(
-                    settingsBackground,
+                    settingsHitbox,
                     [this](CCMenuItemSpriteExtra*) {
                         this->onNoclipSettings(nullptr);
                     }
@@ -2075,62 +2086,15 @@ void ModMenu::onTab(CCObject* sender) {
 
                 if (settingsButton) {
                     settingsButton->setPosition({
-                        layout.x + layout.width / 2.f - 38.f,
-                        layout.y - layout.height / 2.f + 19.f
+                        centerX -
+                            (actualCardWidth / 2.f -
+                            168.f * scale),
+                        centerY +
+                            22.f * scale
                     });
-                    contentMenu->addChild(settingsButton);
-                    s_noclipSettingsButton = settingsButton;
+                    contentMenu->addChild(settingsButton, 11);
                 }
             }
-
-            auto reset = createHackDefaultButton(
-                contentMenu,
-                NoclipSettingKeys,
-                {
-                    layout.x + layout.width / 2.f - 110.f,
-                    layout.y - layout.height / 2.f + 19.f
-                }
-            );
-
-            s_noclipDefaultButton = reset;
-            s_noclipRowY =
-                layout.y - layout.height / 2.f + 19.f;
-
-            updateNoclipRowLayout();
-        }
-    }
-
-    if (tab == 4) {
-        auto settingsInfo = createMutedMenuLabel(
-            "Advanced settings remain available through Geode's settings page.",
-            compact ? 0.24f : 0.27f
-        );
-
-        if (settingsInfo) {
-            settingsInfo->setAnchorPoint({0.f, 0.5f});
-            settingsInfo->setPosition({18.f, 30.f});
-            settingsInfo->limitLabelWidth(
-                viewportWidth - 36.f,
-                compact ? 0.24f : 0.27f,
-                0.12f
-            );
-            scroll->m_contentLayer->addChild(settingsInfo, 3);
-        }
-    }
-
-    // Put the scrollbar on top of the viewport only when there is something
-    // to scroll through. ScrollLayer still supports mouse-wheel and touch
-    // scrolling on all layouts.
-    if (contentHeight > scrollHeight + 1.f) {
-        auto bar = geode::Scrollbar::create(scroll);
-        if (bar) {
-            bar->setAnchorPoint({0.5f, 0.5f});
-            bar->setPosition({
-                width - viewportPad / 2.f,
-                scrollY + scrollHeight / 2.f
-            });
-            bar->setZOrder(9);
-            m_contentPanel->addChild(bar, 9);
         }
     }
 }
