@@ -92,9 +92,4 @@
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
 		}
 	},
-	"resources": {
-		"sprites": [
-			"resources/*.png"
-		]
-	}
 }
