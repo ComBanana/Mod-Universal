@@ -118,7 +118,7 @@ CCMenuItemSpriteExtra* createHackDefaultButton(
     auto label = CCLabelBMFont::create("RESET", "chatFont.fnt");
 
     if (label) {
-        label->setScale(0.36f);
+        label->setScale(0.40f);
         label->setColor({229, 235, 229});
         label->setPosition(background->getContentSize() / 2.f);
         background->addChild(label);
@@ -302,9 +302,7 @@ CCLayerColor* createRoundedLayerColor(
     };
 
     // Build the rounded rectangle from two clean rectangles plus four
-    // circles. This avoids the triangulation artifacts from the old polygon
-    // approximation that could make buttons look like pointed/sideways
-    // shapes on some Geometry Dash configurations.
+    // circles. drawCircle produces a true circular corner on GD 2.2081.
     if (size.width > radiusClamped * 2.f) {
         draw->drawRect(
             {radiusClamped, 0.f},
@@ -325,25 +323,38 @@ CCLayerColor* createRoundedLayerColor(
         );
     }
 
-    draw->drawDot({radiusClamped, radiusClamped}, radiusClamped, fill);
-    draw->drawDot(
+    draw->drawCircle(
+        {radiusClamped, radiusClamped},
+        radiusClamped,
+        fill,
+        0.f,
+        {0.f, 0.f, 0.f, 0.f},
+        32
+    );
+    draw->drawCircle(
         {size.width - radiusClamped, radiusClamped},
         radiusClamped,
-        fill
+        fill,
+        0.f,
+        {0.f, 0.f, 0.f, 0.f},
+        32
     );
-    draw->drawDot(
+    draw->drawCircle(
         {size.width - radiusClamped, size.height - radiusClamped},
         radiusClamped,
-        fill
+        fill,
+        0.f,
+        {0.f, 0.f, 0.f, 0.f},
+        32
     );
-    draw->drawDot(
+    draw->drawCircle(
         {radiusClamped, size.height - radiusClamped},
         radiusClamped,
-        fill
+        fill,
+        0.f,
+        {0.f, 0.f, 0.f, 0.f},
+        32
     );
-
-    layer->addChild(draw, 0);
-    return layer;
 }
 
 void setRoundedLayerColor(
@@ -729,7 +740,7 @@ CCLayerColor* createFeatureCard(
 
     auto title = createMenuLabel(
         titleText,
-        0.48f * scale,
+        0.57f * scale,
         {229, 235, 229}
     );
 
@@ -741,15 +752,15 @@ CCLayerColor* createFeatureCard(
         });
         title->limitLabelWidth(
             size.width - 120.f * scale,
-            0.48f * scale,
-            0.23f * scale
+            0.57f * scale,
+            0.28f * scale
         );
         card->addChild(title, 2);
     }
 
     auto desc = createMenuLabel(
         description,
-        0.30f * scale,
+        0.29f * scale,
         {229, 235, 229}
     );
 
@@ -761,8 +772,8 @@ CCLayerColor* createFeatureCard(
         });
         desc->limitLabelWidth(
             290.f * scale,
-            0.30f * scale,
-            0.15f * scale
+            0.29f * scale,
+            0.14f * scale
         );
         card->addChild(desc, 2);
     }
@@ -1596,7 +1607,7 @@ void ModMenu::createHeader() {
 
     auto version = createMenuLabel(
         "v0.2.0",
-        0.36f * scale,
+        0.33f * scale,
         {229, 235, 229}
     );
 
@@ -1696,7 +1707,7 @@ void ModMenu::createTabBar() {
 
             auto label = createMenuLabel(
                 tabs[i],
-                0.29f * scale,
+                0.31f * scale,
                 {229, 235, 229}
             );
 
@@ -1707,8 +1718,8 @@ void ModMenu::createTabBar() {
                 );
                 label->limitLabelWidth(
                     itemWidth - 10.f * scale,
-                    0.29f * scale,
-                    0.09f * scale
+                    0.31f * scale,
+                    0.10f * scale
                 );
                 item->addChild(label);
             }
@@ -1760,7 +1771,7 @@ void ModMenu::createTabBar() {
 
     auto modules = createMenuLabel(
         "MODULES",
-        0.34f * scale,
+        0.38f * scale,
         {229, 235, 229}
     );
 
@@ -1794,7 +1805,7 @@ void ModMenu::createTabBar() {
 
         auto label = createMenuLabel(
             tabs[i],
-            0.42f * scale,
+            0.46f * scale,
             {229, 235, 229}
         );
 
@@ -2046,7 +2057,7 @@ void ModMenu::onTab(CCObject* sender) {
 
     auto heading = createMenuLabel(
         headingNames[tab],
-        0.56f * scale,
+        0.67f * scale,
         {229, 235, 229}
     );
 
@@ -2058,15 +2069,15 @@ void ModMenu::onTab(CCObject* sender) {
         });
         heading->limitLabelWidth(
             width - 52.f * scale,
-            0.56f * scale,
-            0.30f * scale
+            0.67f * scale,
+            0.35f * scale
         );
         m_contentPanel->addChild(heading, 8);
     }
 
     auto subtitle = createMenuLabel(
         descriptions[tab],
-        0.36f * scale,
+        0.33f * scale,
         {229, 235, 229}
     );
 
@@ -2078,8 +2089,8 @@ void ModMenu::onTab(CCObject* sender) {
         });
         subtitle->limitLabelWidth(
             width - 52.f * scale,
-            0.36f * scale,
-            0.18f * scale
+            0.33f * scale,
+            0.16f * scale
         );
         m_contentPanel->addChild(subtitle, 8);
     }
