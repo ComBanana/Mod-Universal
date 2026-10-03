@@ -478,6 +478,15 @@ CCLayerColor* createModernDivider(
     );
 }
 
+void disableModernButtonAnimation(CCMenuItemSpriteExtra* button) {
+    if (!button)
+        return;
+
+    button->m_scaleMultiplier = 1.f;
+    button->m_baseScale = 1.f;
+    button->m_animationEnabled = false;
+}
+
 CCMenuItemSpriteExtra* createModernActionButton(
     CCMenu* menu,
     char const* text,
@@ -526,6 +535,7 @@ CCMenuItemSpriteExtra* createModernActionButton(
     if (!button)
         return nullptr;
 
+    disableModernButtonAnimation(button);
     button->setPosition(position);
     menu->addChild(button);
     return button;
@@ -556,7 +566,7 @@ CCMenuItemSpriteExtra* createModernToggle(
 
     auto label = createMenuLabel(
         enabled ? "ON" : "OFF",
-        0.43f,
+        0.46f,
         enabled
             ? ccColor3B{18, 28, 24}
             : ccColor3B{229, 235, 229}
@@ -616,6 +626,7 @@ CCMenuItemSpriteExtra* createModernToggle(
     if (!button)
         return nullptr;
 
+    disableModernButtonAnimation(button);
     button->setPosition(position);
     menu->addChild(button);
     return button;
@@ -690,7 +701,7 @@ CCLayerColor* createStatusPill(
 
     auto label = createMenuLabel(
         text,
-        0.42f,
+        0.46f,
         active
             ? ccColor3B{229, 235, 229}
             : ccColor3B{
@@ -741,7 +752,7 @@ CCLayerColor* createFeatureCard(
 
     auto title = createMenuLabel(
         titleText,
-        0.86f * scale,
+        1.08f * scale,
         {229, 235, 229}
     );
 
@@ -753,15 +764,15 @@ CCLayerColor* createFeatureCard(
         });
         title->limitLabelWidth(
             size.width - 120.f * scale,
-            0.86f * scale,
-            0.41f * scale
+            1.08f * scale,
+            0.50f * scale
         );
         card->addChild(title, 2);
     }
 
     auto desc = createMenuLabel(
         description,
-        0.54f * scale,
+        0.72f * scale,
         {229, 235, 229}
     );
 
@@ -773,8 +784,8 @@ CCLayerColor* createFeatureCard(
         });
         desc->limitLabelWidth(
             290.f * scale,
-            0.54f * scale,
-            0.29f * scale
+            0.62f * scale,
+            0.36f * scale
         );
         card->addChild(desc, 2);
     }
@@ -1543,7 +1554,7 @@ void ModMenu::createHeader() {
 
         auto title = createMenuLabel(
             "MOD UNIVERSAL",
-            0.74f * scale,
+            0.82f * scale,
             {229, 235, 229}
         );
 
@@ -1555,8 +1566,8 @@ void ModMenu::createHeader() {
             });
             title->limitLabelWidth(
                 210.f * scale,
-                0.74f * scale,
-                0.36f * scale
+                0.82f * scale,
+                0.42f * scale
             );
             m_mainLayer->addChild(title, 10);
         }
@@ -1588,7 +1599,7 @@ void ModMenu::createHeader() {
 
     auto title = createMenuLabel(
         "MOD UNIVERSAL",
-        1.12f * scale,
+        1.30f * scale,
         {229, 235, 229}
     );
 
@@ -1600,15 +1611,15 @@ void ModMenu::createHeader() {
         });
         title->limitLabelWidth(
             270.f * scale,
-            1.12f * scale,
-            0.40f * scale
+            1.30f * scale,
+            0.50f * scale
         );
         m_mainLayer->addChild(title, 10);
     }
 
     auto version = createMenuLabel(
         "v0.2.0",
-        0.58f * scale,
+        0.64f * scale,
         {229, 235, 229}
     );
 
@@ -1708,7 +1719,7 @@ void ModMenu::createTabBar() {
 
             auto label = createMenuLabel(
                 tabs[i],
-                0.48f * scale,
+                0.56f * scale,
                 {229, 235, 229}
             );
 
@@ -1719,8 +1730,8 @@ void ModMenu::createTabBar() {
                 );
                 label->limitLabelWidth(
                     itemWidth - 10.f * scale,
-                    0.48f * scale,
-                    0.18f * scale
+                    0.56f * scale,
+                    0.21f * scale
                 );
                 item->addChild(label);
             }
@@ -1734,6 +1745,7 @@ void ModMenu::createTabBar() {
             if (!button)
                 continue;
 
+            disableModernButtonAnimation(button);
             button->setTag(i);
             button->setPosition({
                 firstCenterX +
@@ -1806,7 +1818,7 @@ void ModMenu::createTabBar() {
 
         auto label = createMenuLabel(
             tabs[i],
-            0.72f * scale,
+            0.82f * scale,
             {229, 235, 229}
         );
 
@@ -1829,6 +1841,7 @@ void ModMenu::createTabBar() {
         if (!button)
             continue;
 
+        disableModernButtonAnimation(button);
         button->setTag(i);
         button->setPosition({
             buttonCenterX,
@@ -2078,7 +2091,7 @@ void ModMenu::onTab(CCObject* sender) {
 
     auto subtitle = createMenuLabel(
         descriptions[tab],
-        0.47f * scale,
+        0.58f * scale,
         {229, 235, 229}
     );
 
@@ -2090,8 +2103,8 @@ void ModMenu::onTab(CCObject* sender) {
         });
         subtitle->limitLabelWidth(
             width - 52.f * scale,
-            0.54f * scale,
-            0.29f * scale
+            0.58f * scale,
+            0.36f * scale
         );
         m_contentPanel->addChild(subtitle, 8);
     }
