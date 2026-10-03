@@ -1444,7 +1444,7 @@ bool ModMenu::init() {
 
         if (closeBackground) {
             auto closeLabel = CCLabelBMFont::create(
-                "×",
+                "X",
                 "chatFont.fnt"
             );
 
