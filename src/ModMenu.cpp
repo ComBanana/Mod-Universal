@@ -80,6 +80,19 @@ void resetSettingsToDefault(std::vector<std::string> const& keys) {
     }
 }
 
+CCLayerColor* createRoundedLayerColor(
+    ccColor3B color,
+    CCSize size,
+    float radius,
+    GLubyte opacity
+);
+
+void setRoundedLayerColor(
+    CCLayerColor* layer,
+    ccColor3B color,
+    GLubyte opacity
+);
+
 CCMenuItemSpriteExtra* createHackDefaultButton(
     CCMenu* menu,
     std::vector<std::string> settingKeys,
@@ -252,7 +265,7 @@ CCLayerColor* createRoundedLayerColor(
     ccColor3B color,
     CCSize size,
     float radius,
-    GLubyte opacity = 255
+    GLubyte opacity
 ) {
     if (size.width <= 0.f || size.height <= 0.f)
         return nullptr;
@@ -338,7 +351,7 @@ CCLayerColor* createRoundedLayerColor(
 void setRoundedLayerColor(
     CCLayerColor* layer,
     ccColor3B color,
-    GLubyte opacity = 255
+    GLubyte opacity
 ) {
     if (!layer)
         return;
@@ -1469,7 +1482,58 @@ bool ModMenu::init() {
 }
 
 void ModMenu::createHeader() {
-    float const widthScale = std::min(
+    bool const compact = isCompactMenu(m_size.width);
+
+    if (compact) {
+        float const scale = std::min(
+            1.f,
+            std::min(
+                m_size.width / 430.f,
+                m_size.height / 760.f
+            )
+        );
+
+        auto header = createModernPanel(
+            m_mainLayer,
+            {
+                m_size.width / 2.f,
+                m_size.height - 49.f * scale
+            },
+            {
+                398.f * scale,
+                66.f * scale
+            },
+            {20, 23, 22},
+            255
+        );
+
+        if (header)
+            header->setZOrder(-20);
+
+        auto title = createMenuLabel(
+            "MOD UNIVERSAL",
+            0.54f * scale,
+            {229, 235, 229}
+        );
+
+        if (title) {
+            title->setAnchorPoint({0.f, 0.5f});
+            title->setPosition({
+                30.f * scale,
+                m_size.height - 41.f * scale
+            });
+            title->limitLabelWidth(
+                210.f * scale,
+                0.54f * scale,
+                0.26f * scale
+            );
+            m_mainLayer->addChild(title, 10);
+        }
+
+        return;
+    }
+
+    float const scale = std::min(
         1.f,
         m_size.width / 1200.f
     );
@@ -1478,11 +1542,11 @@ void ModMenu::createHeader() {
         m_mainLayer,
         {
             m_size.width / 2.f,
-            m_size.height - 56.f * widthScale
+            m_size.height - 56.f * scale
         },
         {
-            1152.f * widthScale,
-            72.f * widthScale
+            1152.f * scale,
+            72.f * scale
         },
         {20, 23, 22},
         255
@@ -1493,35 +1557,35 @@ void ModMenu::createHeader() {
 
     auto title = createMenuLabel(
         "MOD UNIVERSAL",
-        0.70f * widthScale,
+        0.70f * scale,
         {229, 235, 229}
     );
 
     if (title) {
         title->setAnchorPoint({0.f, 0.5f});
         title->setPosition({
-            48.f * widthScale,
-            m_size.height - 55.f * widthScale
+            48.f * scale,
+            m_size.height - 55.f * scale
         });
         title->limitLabelWidth(
-            260.f * widthScale,
-            0.70f * widthScale,
-            0.28f * widthScale
+            260.f * scale,
+            0.70f * scale,
+            0.28f * scale
         );
         m_mainLayer->addChild(title, 10);
     }
 
     auto version = createMenuLabel(
         "v0.2.0",
-        0.40f * widthScale,
+        0.40f * scale,
         {165, 170, 166}
     );
 
     if (version) {
         version->setAnchorPoint({0.f, 0.5f});
         version->setPosition({
-            48.f * widthScale,
-            m_size.height - 78.f * widthScale
+            48.f * scale,
+            m_size.height - 78.f * scale
         });
         m_mainLayer->addChild(version, 10);
     }
@@ -1533,12 +1597,12 @@ void ModMenu::createHeader() {
             headerMenu,
             "Set to Default",
             {
-                1092.f * widthScale,
-                m_size.height - 56.f * widthScale
+                1092.f * scale,
+                m_size.height - 56.f * scale
             },
             {
-                126.f * widthScale,
-                34.f * widthScale
+                126.f * scale,
+                34.f * scale
             },
             [this]() {
                 this->onSetAllToDefault(nullptr);
@@ -1562,6 +1626,94 @@ void ModMenu::createTabBar() {
         "Misc",
         "Settings"
     };
+
+    bool const compact = isCompactMenu(m_size.width);
+
+    if (compact) {
+        float const scale = std::min(
+            1.f,
+            std::min(
+                m_size.width / 430.f,
+                m_size.height / 760.f
+            )
+        );
+
+        float const navWidth = 398.f * scale;
+        float const navHeight = 62.f * scale;
+        float const navX = 16.f * scale;
+        float const navBottom = m_size.height - 154.f * scale;
+
+        auto navigation = createModernPanel(
+            m_mainLayer,
+            {
+                navX + navWidth / 2.f,
+                navBottom + navHeight / 2.f
+            },
+            {navWidth, navHeight},
+            {19, 22, 20},
+            255
+        );
+
+        if (navigation)
+            navigation->setZOrder(-10);
+
+        float const itemWidth = 70.f * scale;
+        float const itemHeight = 34.f * scale;
+        float const gap = 7.f * scale;
+        float const firstCenterX = 60.f * scale;
+        float const centerY = navBottom + navHeight / 2.f;
+
+        for (int i = 0; i < 5; ++i) {
+            auto item = createRoundedLayerColor(
+                i == m_currentTab
+                    ? ccColor3B{31, 64, 46}
+                    : ccColor3B{24, 27, 26},
+                {itemWidth, itemHeight},
+                7.f * scale
+            );
+
+            if (!item)
+                continue;
+
+            auto label = createMenuLabel(
+                tabs[i],
+                0.31f * scale,
+                {229, 235, 229}
+            );
+
+            if (label) {
+                label->setTag(7002);
+                label->setPosition(
+                    item->getContentSize() / 2.f
+                );
+                label->limitLabelWidth(
+                    itemWidth - 10.f * scale,
+                    0.31f * scale,
+                    0.10f * scale
+                );
+                item->addChild(label);
+            }
+
+            auto button = CCMenuItemSpriteExtra::create(
+                item,
+                this,
+                menu_selector(ModMenu::onTab)
+            );
+
+            if (!button)
+                continue;
+
+            button->setTag(i);
+            button->setPosition({
+                firstCenterX +
+                    i * (itemWidth + gap),
+                centerY
+            });
+            menu->addChild(button);
+        }
+
+        return;
+    }
 
     float const scale = std::min(
         1.f,
@@ -1656,31 +1808,43 @@ void ModMenu::createTabBar() {
 }
 
 void ModMenu::createContentPanel() {
-    float const scale = std::min(
-        1.f,
-        m_size.width / 1200.f
-    );
-
     bool const compact = isCompactMenu(m_size.width);
 
     if (compact) {
-        float const width = m_size.width - 32.f * scale;
-        float const height = m_size.height - 180.f * scale;
+        float const scale = std::min(
+            1.f,
+            std::min(
+                m_size.width / 430.f,
+                m_size.height / 760.f
+            )
+        );
 
         m_contentPanel = CCNode::create();
         if (!m_contentPanel)
             return;
 
-        m_contentPanel->setContentSize({width, height});
+        float const width = 398.f * scale;
+        float const height = 574.f * scale;
+
+        m_contentPanel->setContentSize({
+            width,
+            height
+        });
+
         m_contentPanel->setPosition({
             16.f * scale,
             16.f * scale
         });
-        m_mainLayer->addChild(m_contentPanel);
 
+        m_mainLayer->addChild(m_contentPanel);
         onTab(nullptr);
         return;
     }
+
+    float const scale = std::min(
+        1.f,
+        m_size.width / 1200.f
+    );
 
     m_contentPanel = CCNode::create();
     if (!m_contentPanel)
