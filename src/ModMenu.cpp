@@ -1,6 +1,7 @@
 #include "../include/ModMenu.hpp"
 
 #include <Geode/loader/Mod.hpp>
+#include <Geode/cocos/draw_nodes/CCDrawNode.h>
 #include <Geode/modify/PlayLayer.hpp>
 #include <Geode/ui/ScrollLayer.hpp>
 #include <Geode/ui/Scrollbar.hpp>
@@ -8,6 +9,7 @@
 #include <algorithm>
 #include <array>
 #include <cstring>
+#include <cmath>
 #include <filesystem>
 #include <functional>
 #include <vector>
@@ -246,6 +248,167 @@ CCLabelBMFont* createMutedMenuLabel(
     return createMenuLabel(text, scale, {155, 158, 168});
 }
 
+CCLayerColor* createRoundedLayerColor(
+    ccColor3B color,
+    CCSize size,
+    float radius,
+    GLubyte opacity = 255
+) {
+    if (size.width <= 0.f || size.height <= 0.f)
+        return nullptr;
+
+    auto layer = CCLayerColor::create(
+        {0, 0, 0, 0},
+        size.width,
+        size.height
+    );
+
+    if (!layer)
+        return nullptr;
+
+    layer->ignoreAnchorPointForPosition(false);
+    layer->setAnchorPoint({0.5f, 0.5f});
+
+    auto draw = CCDrawNode::create();
+    if (!draw)
+        return layer;
+
+    draw->setTag(9001);
+
+    float const radiusClamped = std::clamp(
+        radius,
+        0.f,
+        std::min(size.width, size.height) / 2.f
+    );
+
+    std::vector<CCPoint> points;
+    constexpr int segments = 8;
+    constexpr float pi = 3.14159265359f;
+
+    auto appendCorner = [&](CCPoint center, float startAngle) {
+        for (int i = 0; i <= segments; ++i) {
+            float const angle =
+                startAngle +
+                pi / 2.f *
+                    static_cast<float>(i) /
+                    static_cast<float>(segments);
+
+            points.push_back({
+                center.x + std::cos(angle) * radiusClamped,
+                center.y + std::sin(angle) * radiusClamped
+            });
+        }
+    };
+
+    appendCorner(
+        {radiusClamped, radiusClamped},
+        pi
+    );
+    appendCorner(
+        {size.width - radiusClamped, radiusClamped},
+        pi * 1.5f
+    );
+    appendCorner(
+        {size.width - radiusClamped, size.height - radiusClamped},
+        0.f
+    );
+    appendCorner(
+        {radiusClamped, size.height - radiusClamped},
+        pi * 0.5f
+    );
+
+    draw->drawPolygon(
+        points.data(),
+        static_cast<unsigned int>(points.size()),
+        {
+            color.r / 255.f,
+            color.g / 255.f,
+            color.b / 255.f,
+            opacity / 255.f
+        },
+        0.f,
+        {0.f, 0.f, 0.f, 0.f},
+        cocos2d::BorderAlignment::CENTER
+    );
+
+    layer->addChild(draw, 0);
+    return layer;
+}
+
+void setRoundedLayerColor(
+    CCLayerColor* layer,
+    ccColor3B color,
+    GLubyte opacity = 255
+) {
+    if (!layer)
+        return;
+
+    auto draw = typeinfo_cast<CCDrawNode*>(
+        layer->getChildByTag(9001)
+    );
+
+    if (!draw)
+        return;
+
+    CCSize const size = layer->getContentSize();
+    float const radius = std::min(size.width, size.height) * 0.12f;
+
+    draw->clear();
+
+    float const radiusClamped = std::clamp(
+        radius,
+        0.f,
+        std::min(size.width, size.height) / 2.f
+    );
+
+    std::vector<CCPoint> points;
+    constexpr int segments = 8;
+    constexpr float pi = 3.14159265359f;
+
+    auto appendCorner = [&](CCPoint center, float startAngle) {
+        for (int i = 0; i <= segments; ++i) {
+            float const angle =
+                startAngle +
+                pi / 2.f *
+                    static_cast<float>(i) /
+                    static_cast<float>(segments);
+
+            points.push_back({
+                center.x + std::cos(angle) * radiusClamped,
+                center.y + std::sin(angle) * radiusClamped
+            });
+        }
+    };
+
+    appendCorner({radiusClamped, radiusClamped}, pi);
+    appendCorner(
+        {size.width - radiusClamped, radiusClamped},
+        pi * 1.5f
+    );
+    appendCorner(
+        {size.width - radiusClamped, size.height - radiusClamped},
+        0.f
+    );
+    appendCorner(
+        {radiusClamped, size.height - radiusClamped},
+        pi * 0.5f
+    );
+
+    draw->drawPolygon(
+        points.data(),
+        static_cast<unsigned int>(points.size()),
+        {
+            color.r / 255.f,
+            color.g / 255.f,
+            color.b / 255.f,
+            opacity / 255.f
+        },
+        0.f,
+        {0.f, 0.f, 0.f, 0.f},
+        cocos2d::BorderAlignment::CENTER
+    );
+}
+
 CCLayerColor* createModernPanel(
     CCNode* parent,
     CCPoint center,
@@ -256,21 +419,18 @@ CCLayerColor* createModernPanel(
     if (!parent || size.width <= 0.f || size.height <= 0.f)
         return nullptr;
 
-    auto panel = CCLayerColor::create(
-        {color.r, color.g, color.b, opacity},
-        size.width,
-        size.height
+    auto panel = createRoundedLayerColor(
+        color,
+        size,
+        12.f,
+        opacity
     );
 
     if (!panel)
         return nullptr;
 
-    panel->ignoreAnchorPointForPosition(false);
     panel->setAnchorPoint({0.5f, 0.5f});
     panel->setPosition(center);
-
-    // Panels are structural backgrounds. Keep them below menus and labels
-    // regardless of creation order.
     panel->setZOrder(-10);
     parent->addChild(panel, -10);
     return panel;
@@ -302,25 +462,25 @@ CCMenuItemSpriteExtra* createModernActionButton(
     if (!menu || !text)
         return nullptr;
 
-    auto background = CCLayerColor::create(
+    auto background = createRoundedLayerColor(
         accent
-            ? ccColor4B{38, 89, 59, 255}
-            : ccColor4B{31, 36, 33, 255},
-        size.width,
-        size.height
+            ? ccColor3B{75, 190, 138}
+            : ccColor3B{31, 36, 33},
+        size,
+        7.f
     );
 
     if (!background)
         return nullptr;
 
-    background->ignoreAnchorPointForPosition(false);
-    background->setAnchorPoint({0.5f, 0.5f});
-
     auto label = createMenuLabel(
         text,
         size.height >= 34.f ? 0.46f : 0.40f,
-        accent ? ccColor3B{18, 28, 24} : ccColor3B{232, 234, 238}
+        accent
+            ? ccColor3B{18, 28, 24}
+            : ccColor3B{229, 235, 229}
     );
+
     if (!label)
         return nullptr;
 
@@ -356,25 +516,25 @@ CCMenuItemSpriteExtra* createModernToggle(
     auto const key = std::string(settingKey);
     bool const enabled = Mod::get()->getSettingValue<bool>(key);
 
-    auto background = CCLayerColor::create(
+    auto background = createRoundedLayerColor(
         enabled
-            ? ccColor4B{38, 89, 59, 255}
-            : ccColor4B{31, 36, 33, 255},
-        size.width,
-        size.height
+            ? ccColor3B{75, 190, 138}
+            : ccColor3B{31, 36, 33},
+        size,
+        size.height / 2.f
     );
 
     if (!background)
         return nullptr;
 
-    background->ignoreAnchorPointForPosition(false);
-    background->setAnchorPoint({0.5f, 0.5f});
-
     auto label = createMenuLabel(
         enabled ? "ON" : "OFF",
         0.43f,
-        enabled ? ccColor3B{18, 28, 24} : ccColor3B{215, 218, 224}
+        enabled
+            ? ccColor3B{18, 28, 24}
+            : ccColor3B{229, 235, 229}
     );
+
     if (!label)
         return nullptr;
 
@@ -393,67 +553,36 @@ CCMenuItemSpriteExtra* createModernToggle(
             else
                 mod->setSettingValue<bool>(key, next);
 
-            auto bg = typeinfo_cast<CCLayerColor*>(item->getNormalImage());
+            auto bg = typeinfo_cast<CCLayerColor*>(
+                item->getNormalImage()
+            );
             if (!bg)
                 return;
 
-            bg->setColor(next
-                ? ccColor3B{38, 89, 59}
-                : ccColor3B{31, 36, 33}
+            setRoundedLayerColor(
+                bg,
+                next
+                    ? ccColor3B{75, 190, 138}
+                    : ccColor3B{31, 36, 33},
+                255
             );
 
             auto stateLabel = typeinfo_cast<CCLabelBMFont*>(
                 bg->getChildByTag(7001)
             );
+
             if (stateLabel) {
                 stateLabel->setString(next ? "ON" : "OFF");
                 stateLabel->setColor(
                     next
                         ? ccColor3B{18, 28, 24}
-                        : ccColor3B{215, 218, 224}
+                        : ccColor3B{229, 235, 229}
                 );
             }
 
             saveNoclipButtonSettings();
             updateNoclipDefaultButton();
-
-            auto parentMenu = item->getParent();
-            auto content = parentMenu ? parentMenu->getParent() : nullptr;
-            if (content) {
-                for (auto* child : CCArrayExt<CCNode*>(content->getChildren())) {
-                    if (child->getTag() != 7100)
-                        continue;
-
-                    auto pill = child->getChildByTag(7101);
-                    auto stateLabelNode = pill
-                        ? pill->getChildByTag(7102)
-                        : nullptr;
-
-                    auto stateLabel =
-                        typeinfo_cast<CCLabelBMFont*>(stateLabelNode);
-                    auto statePill =
-                        typeinfo_cast<CCLayerColor*>(pill);
-
-                    if (stateLabel) {
-                        stateLabel->setString(next ? "ON" : "OFF");
-                        stateLabel->setColor(
-                            next
-                                ? ccColor3B{18, 28, 24}
-                                : ccColor3B{215, 218, 224}
-                        );
-                    }
-
-                    if (statePill) {
-                        statePill->setColor(
-                            next
-                                ? ccColor3B{38, 89, 59}
-                                : ccColor3B{31, 36, 33}
-                        );
-                    }
-
-                    break;
-                }
-            }
+            ModMenu::refreshCurrentTab();
         }
     );
 
@@ -517,23 +646,21 @@ CCLayerColor* createStatusPill(
         return nullptr;
 
     float const width = std::max(
-        52.f,
+        62.f,
         static_cast<float>(std::strlen(text)) * 5.2f + 18.f
     );
 
-    auto pill = CCLayerColor::create(
+    auto pill = createRoundedLayerColor(
         active
-            ? ccColor4B{38, 89, 59, 255}
-            : ccColor4B{31, 36, 33, 255},
-        width,
-        24.f
+            ? ccColor3B{38, 89, 59}
+            : ccColor3B{46, 46, 46},
+        {width, 26.f},
+        13.f
     );
 
     if (!pill)
         return nullptr;
 
-    pill->ignoreAnchorPointForPosition(false);
-    pill->setAnchorPoint({0.5f, 0.5f});
     pill->setPosition(center);
     pill->setTag(7101);
 
@@ -541,7 +668,7 @@ CCLayerColor* createStatusPill(
         text,
         0.31f,
         active
-            ? ccColor3B{18, 28, 24}
+            ? ccColor3B{229, 235, 229}
             : ccColor3B{
                 static_cast<GLubyte>(subdued ? 150 : 215),
                 static_cast<GLubyte>(subdued ? 153 : 218),
@@ -559,8 +686,6 @@ CCLayerColor* createStatusPill(
     return pill;
 }
 
-
-
 CCLayerColor* createFeatureCard(
     CCNode* parent,
     CCPoint center,
@@ -574,170 +699,130 @@ CCLayerColor* createFeatureCard(
     if (!parent || !titleText || size.width <= 0.f || size.height <= 0.f)
         return nullptr;
 
-    auto card = CCLayerColor::create(
-        {24, 27, 26, 255},
-        size.width,
-        size.height
+    auto card = createRoundedLayerColor(
+        {24, 27, 26},
+        size,
+        10.f
     );
 
     if (!card)
         return nullptr;
 
-    card->ignoreAnchorPointForPosition(false);
-    card->setAnchorPoint({0.5f, 0.5f});
     card->setPosition(center);
     card->setTag(7100);
 
-    bool const narrow = size.width < 400.f;
-    bool const veryNarrow = size.width < 300.f;
-
-    auto accent = CCLayerColor::create(
-        active
-            ? ccColor4B{38, 89, 59, 255}
-            : ccColor4B{63, 67, 78, 255},
-        4.f,
-        std::max(24.f, size.height - 28.f)
-    );
-
-    if (accent) {
-        accent->setPosition({10.f, 14.f});
-        card->addChild(accent, 1);
-    }
+    float const scaleX = size.width / 430.f;
+    float const scaleY = size.height / 138.f;
+    float const scale = std::min(scaleX, scaleY);
 
     auto section = createMenuLabel(
         sectionLabel,
-        veryNarrow ? 0.25f : narrow ? 0.27f : 0.30f,
+        0.30f * scale,
         {133, 137, 148}
     );
 
     if (section) {
         section->setAnchorPoint({0.f, 0.5f});
         section->setPosition({
-            24.f,
-            size.height - (narrow ? 17.f : 18.f)
+            18.f * scale,
+            138.f * scale / 2.f - 22.f * scale
         });
         card->addChild(section, 2);
     }
 
-    float const titleScale =
-        veryNarrow ? 0.46f :
-        narrow ? 0.50f :
-        size.width < 520.f ? 0.53f :
-        0.57f;
-
     auto title = createMenuLabel(
         titleText,
-        titleScale,
+        0.57f * scale,
         {229, 235, 229}
     );
 
     if (title) {
         title->setAnchorPoint({0.f, 0.5f});
         title->setPosition({
-            24.f,
-            size.height - (narrow ? 39.f : 42.f)
+            18.f * scale,
+            138.f * scale / 2.f - 27.f * scale
         });
-
         title->limitLabelWidth(
-            std::max(96.f, size.width - 164.f),
-            titleScale,
-            0.30f
+            size.width - 120.f * scale,
+            0.57f * scale,
+            0.28f * scale
         );
-
         card->addChild(title, 2);
     }
 
-    float const descScale =
-        veryNarrow ? 0.24f :
-        narrow ? 0.25f :
-        0.29f;
-
     auto desc = createMutedMenuLabel(
         description,
-        descScale
+        0.29f * scale
     );
 
     if (desc) {
         desc->setAnchorPoint({0.f, 0.5f});
-
-        float const descY =
-            narrow
-                ? size.height - 72.f
-                : 22.f;
-
-        desc->setPosition({24.f, descY});
-
+        desc->setPosition({
+            18.f * scale,
+            138.f * scale / 2.f - 54.f * scale
+        });
         desc->limitLabelWidth(
-            std::max(90.f, size.width - 48.f),
-            descScale,
-            0.14f
+            size.width - 150.f * scale,
+            0.29f * scale,
+            0.14f * scale
         );
-
         card->addChild(desc, 2);
     }
 
-    if (statusText)
+    if (statusText) {
         createStatusPill(
             card,
             {
-                size.width - 48.f,
-                size.height - (narrow ? 27.f : 29.f)
+                size.width - 48.f * scale,
+                size.height - 29.f * scale
             },
             statusText,
             active,
             !active
         );
+    }
 
     parent->addChild(card, -5);
     return card;
 }
 
-
 CCSize getResponsivePopupSize(float preferredWidth, float preferredHeight) {
     auto const screen = CCDirector::sharedDirector()->getWinSize();
 
-    // The popup chooses its shape from the actual window aspect ratio first,
-    // then clamps itself to the available pixels. This is deliberately
-    // independent of any one monitor resolution.
     float const aspect =
         screen.height > 1.f ? screen.width / screen.height : 1.f;
 
-    float targetWidth = preferredWidth;
-    float targetHeight = preferredHeight;
+    float targetWidth = 1200.f;
+    float targetHeight = 720.f;
 
     if (aspect < 0.95f) {
-        // Tall / portrait windows get more vertical room.
-        targetWidth = std::max(targetWidth, 640.f);
-        targetHeight = std::max(targetHeight, 720.f);
+        targetWidth = 430.f;
+        targetHeight = 760.f;
     }
     else if (aspect < 1.45f) {
-        // Near-square windows trade some width for a taller workspace.
-        targetWidth = std::max(targetWidth, 760.f);
-        targetHeight = std::max(targetHeight, 620.f);
-    }
-    else {
-        // Wide windows get a larger canvas; the content itself still adapts
-        // to whatever width remains after the sidebar.
-        targetWidth = std::max(targetWidth, 1040.f);
-        targetHeight = std::max(targetHeight, 600.f);
+        targetWidth = 960.f;
+        targetHeight = 700.f;
     }
 
-    float const availableWidth =
-        std::max(220.f, screen.width - 24.f);
-    float const availableHeight =
-        std::max(180.f, screen.height - 24.f);
+    float const availableWidth = std::max(220.f, screen.width - 24.f);
+    float const availableHeight = std::max(180.f, screen.height - 24.f);
+
+    float const scale = std::min(
+        1.f,
+        std::min(
+            availableWidth / targetWidth,
+            availableHeight / targetHeight
+        )
+    );
 
     return {
-        std::min(targetWidth, availableWidth),
-        std::min(targetHeight, availableHeight)
+        targetWidth * scale,
+        targetHeight * scale
     };
 }
 
 bool isCompactMenu(float width) {
-    // Keep the sidebar on normal desktop/tablet-sized windows. Switch to the
-    // compact top navigation only when there is not enough horizontal room
-    // for both a usable sidebar and a readable content area.
-    return width < 520.f;
+    return width < 760.f;
 }
 
 struct CompactTabGrid {
