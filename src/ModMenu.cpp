@@ -752,9 +752,10 @@ CCLayerColor* createFeatureCard(
         card->addChild(title, 2);
     }
 
-    auto desc = createMutedMenuLabel(
+    auto desc = createMenuLabel(
         description,
-        0.29f * scale
+        0.29f * scale,
+        {229, 235, 229}
     );
 
     if (desc) {
@@ -780,7 +781,7 @@ CCLayerColor* createFeatureCard(
             },
             statusText,
             active,
-            !active
+            false
         );
 
         if (pill)
@@ -1423,16 +1424,18 @@ bool ModMenu::init() {
     if (m_closeBtn)
         m_closeBtn->setVisible(false);
 
-    auto background = createModernPanel(
-        m_mainLayer,
-        m_size / 2.f,
-        m_size,
+    auto background = createRoundedLayerColor(
         {14, 17, 15},
-        255
+        m_size,
+        18.f
     );
 
-    if (background)
+    if (background) {
+        background->setAnchorPoint({0.5f, 0.5f});
+        background->setPosition(m_size / 2.f);
         background->setZOrder(-100);
+        m_mainLayer->addChild(background, -100);
+    }
 
     auto closeMenu = createModernMenu(m_mainLayer);
     if (closeMenu) {
@@ -1578,7 +1581,7 @@ void ModMenu::createHeader() {
     auto version = createMenuLabel(
         "v0.2.0",
         0.40f * scale,
-        {165, 170, 166}
+        {229, 235, 229}
     );
 
     if (version) {
@@ -1742,7 +1745,7 @@ void ModMenu::createTabBar() {
     auto modules = createMenuLabel(
         "MODULES",
         0.38f * scale,
-        {142, 147, 143}
+        {229, 235, 229}
     );
 
     if (modules) {
@@ -2017,8 +2020,16 @@ void ModMenu::onTab(CCObject* sender) {
         "Interface and Mod Universal configuration"
     };
 
+    constexpr char const* headingNames[] = {
+        "PLAYER",
+        "VISUALS",
+        "CREATOR",
+        "MISC",
+        "SETTINGS"
+    };
+
     auto heading = createMenuLabel(
-        tabNames[tab],
+        headingNames[tab],
         0.67f * scale,
         {229, 235, 229}
     );
@@ -2037,9 +2048,10 @@ void ModMenu::onTab(CCObject* sender) {
         m_contentPanel->addChild(heading, 8);
     }
 
-    auto subtitle = createMutedMenuLabel(
+    auto subtitle = createMenuLabel(
         descriptions[tab],
-        0.33f * scale
+        0.33f * scale,
+        {229, 235, 229}
     );
 
     if (subtitle) {
