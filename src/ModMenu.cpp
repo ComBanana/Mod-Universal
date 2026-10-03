@@ -645,10 +645,8 @@ CCLayerColor* createStatusPill(
     if (!parent || !text)
         return nullptr;
 
-    float const width = std::max(
-        62.f,
-        static_cast<float>(std::strlen(text)) * 5.2f + 18.f
-    );
+    bool const isOn = std::strcmp(text, "ON") == 0;
+    float const width = isOn ? 72.f : 62.f;
 
     auto pill = createRoundedLayerColor(
         active
@@ -662,7 +660,6 @@ CCLayerColor* createStatusPill(
         return nullptr;
 
     pill->setPosition(center);
-    pill->setTag(7101);
 
     auto label = createMenuLabel(
         text,
@@ -696,6 +693,8 @@ CCLayerColor* createFeatureCard(
     bool active,
     char const* statusText
 ) {
+    (void)sectionLabel;
+
     if (!parent || !titleText || size.width <= 0.f || size.height <= 0.f)
         return nullptr;
 
@@ -711,24 +710,7 @@ CCLayerColor* createFeatureCard(
     card->setPosition(center);
     card->setTag(7100);
 
-    float const scaleX = size.width / 430.f;
-    float const scaleY = size.height / 138.f;
-    float const scale = std::min(scaleX, scaleY);
-
-    auto section = createMenuLabel(
-        sectionLabel,
-        0.30f * scale,
-        {133, 137, 148}
-    );
-
-    if (section) {
-        section->setAnchorPoint({0.f, 0.5f});
-        section->setPosition({
-            18.f * scale,
-            138.f * scale / 2.f - 22.f * scale
-        });
-        card->addChild(section, 2);
-    }
+    float const scale = size.width / 430.f;
 
     auto title = createMenuLabel(
         titleText,
@@ -740,7 +722,7 @@ CCLayerColor* createFeatureCard(
         title->setAnchorPoint({0.f, 0.5f});
         title->setPosition({
             18.f * scale,
-            138.f * scale / 2.f - 27.f * scale
+            110.5f * scale
         });
         title->limitLabelWidth(
             size.width - 120.f * scale,
@@ -759,7 +741,7 @@ CCLayerColor* createFeatureCard(
         desc->setAnchorPoint({0.f, 0.5f});
         desc->setPosition({
             18.f * scale,
-            138.f * scale / 2.f - 54.f * scale
+            82.5f * scale
         });
         desc->limitLabelWidth(
             size.width - 150.f * scale,
@@ -770,16 +752,19 @@ CCLayerColor* createFeatureCard(
     }
 
     if (statusText) {
-        createStatusPill(
+        auto pill = createStatusPill(
             card,
             {
                 size.width - 48.f * scale,
-                size.height - 29.f * scale
+                112.f * scale
             },
             statusText,
             active,
             !active
         );
+
+        if (pill)
+            pill->setTag(7101);
     }
 
     parent->addChild(card, -5);
@@ -1402,8 +1387,8 @@ bool ModMenu::init() {
         screen.height > 1.f ? screen.width / screen.height : 1.f;
 
     auto const popupSize = getResponsivePopupSize(
-        aspect < 0.95f ? 640.f : aspect < 1.45f ? 760.f : 1040.f,
-        aspect < 0.95f ? 720.f : aspect < 1.45f ? 620.f : 600.f
+        aspect < 0.95f ? 430.f : aspect < 1.45f ? 960.f : 1200.f,
+        aspect < 0.95f ? 760.f : aspect < 1.45f ? 700.f : 720.f
     );
 
     if (!Popup::init(popupSize.width, popupSize.height))
@@ -1425,7 +1410,7 @@ bool ModMenu::init() {
         m_mainLayer,
         m_size / 2.f,
         m_size,
-        {18, 20, 25},
+        {14, 17, 15},
         255
     );
 
@@ -1436,94 +1421,89 @@ bool ModMenu::init() {
     createTabBar();
     createContentPanel();
 
-    // The global reset action now lives in the header beside the version
-    // indicator rather than consuming permanent footer space.
     return true;
 }
 
-
 void ModMenu::createHeader() {
-    bool const compact = isCompactMenu(m_size.width);
+    float const widthScale = std::min(
+        1.f,
+        m_size.width / 1200.f
+    );
 
-    float const sidebarWidth =
-        std::clamp(m_size.width * 0.18f, 150.f, 190.f);
+    auto header = createModernPanel(
+        m_mainLayer,
+        {
+            m_size.width / 2.f,
+            m_size.height - 56.f * widthScale
+        },
+        {
+            1152.f * widthScale,
+            72.f * widthScale
+        },
+        {20, 23, 22},
+        255
+    );
+
+    if (header)
+        header->setZOrder(-20);
 
     auto title = createMenuLabel(
         "MOD UNIVERSAL",
-        compact ? 0.48f : 0.58f,
+        0.70f * widthScale,
         {229, 235, 229}
     );
 
     if (title) {
         title->setAnchorPoint({0.f, 0.5f});
         title->setPosition({
-            compact
-                ? 18.f
-                : 18.f + sidebarWidth / 2.f -
-                    title->getContentSize().width * title->getScaleX() / 2.f,
-            m_size.height - 56.f
+            48.f * widthScale,
+            m_size.height - 55.f * widthScale
         });
-
         title->limitLabelWidth(
-            compact
-                ? std::max(120.f, m_size.width * 0.34f)
-                : std::max(130.f, sidebarWidth - 16.f),
-            compact ? 0.48f : 0.58f,
-            0.28f
+            260.f * widthScale,
+            0.70f * widthScale,
+            0.28f * widthScale
         );
-
         m_mainLayer->addChild(title, 10);
     }
 
-    auto version = createStatusPill(
-        m_mainLayer,
-        {
-            m_size.width - 78.f,
-            m_size.height - 56.f
-        },
+    auto version = createMenuLabel(
         "v0.2.0",
-        false,
-        false
+        0.40f * widthScale,
+        {165, 170, 166}
     );
 
     if (version) {
-        version->setZOrder(9);
-
-        float const versionWidth = version->getContentSize().width;
-        float const resetWidth =
-            std::clamp(m_size.width * 0.17f, 112.f, 136.f);
-
-        float const resetRightX =
-            m_size.width - 78.f -
-            versionWidth / 2.f -
-            9.f;
-
-        float const resetCenterX =
-            resetRightX - resetWidth / 2.f;
-
-        auto headerMenu = createModernMenu(m_mainLayer);
-
-        if (headerMenu) {
-            auto reset = createModernActionButton(
-                headerMenu,
-                "Set to Default",
-                {resetCenterX, m_size.height - 56.f},
-                {resetWidth, 30.f},
-                [this]() {
-                    this->onSetAllToDefault(nullptr);
-                }
-            );
-
-            if (!reset)
-                log::warn("Could not create header Set to Default button");
-        }
+        version->setAnchorPoint({0.f, 0.5f});
+        version->setPosition({
+            48.f * widthScale,
+            m_size.height - 78.f * widthScale
+        });
+        m_mainLayer->addChild(version, 10);
     }
 
-    createModernDivider(
-        m_mainLayer,
-        {m_size.width / 2.f, m_size.height - 92.f},
-        m_size.width - (compact ? 32.f : 44.f)
-    );
+    auto headerMenu = createModernMenu(m_mainLayer);
+
+    if (headerMenu) {
+        auto reset = createModernActionButton(
+            headerMenu,
+            "Set to Default",
+            {
+                1092.f * widthScale,
+                m_size.height - 56.f * widthScale
+            },
+            {
+                126.f * widthScale,
+                34.f * widthScale
+            },
+            [this]() {
+                this->onSetAllToDefault(nullptr);
+            }
+        );
+
+        if (!reset)
+            log::warn("Could not create header Set to Default button");
+    }
 }
 
 void ModMenu::createTabBar() {
@@ -1539,239 +1519,77 @@ void ModMenu::createTabBar() {
         "Settings"
     };
 
-    bool const compact = isCompactMenu(m_size.width);
+    float const scale = std::min(
+        1.f,
+        m_size.width / 1200.f
+    );
 
-    if (!compact) {
-        float const sidebarWidth =
-            std::clamp(m_size.width * 0.18f, 150.f, 190.f);
-        float const sidebarLeft = 18.f;
+    float const sidebarLeft = 24.f * scale;
+    float const sidebarWidth = 188.f * scale;
+    float const sidebarHeight = 570.f * scale;
+    float const sidebarBottom = 40.f * scale;
 
-        // Drop the tab panel farther below the header divider so the header
-        // reads as a distinct top bar instead of touching the navigation.
-        float const sidebarTop = m_size.height - 98.f;
-        float const sidebarBottom = 54.f;
-        float const sidebarHeight =
-            std::max(150.f, sidebarTop - sidebarBottom);
+    auto sidebar = createModernPanel(
+        m_mainLayer,
+        {
+            sidebarLeft + sidebarWidth / 2.f,
+            sidebarBottom + sidebarHeight / 2.f
+        },
+        {sidebarWidth, sidebarHeight},
+        {19, 22, 20},
+        255
+    );
 
-        auto sidebar = createModernPanel(
-            m_mainLayer,
-            {
-                sidebarLeft + sidebarWidth / 2.f,
-                sidebarBottom + sidebarHeight / 2.f
-            },
-            {sidebarWidth, sidebarHeight},
-            {19, 22, 20},
-            255
-        );
+    if (sidebar)
+        sidebar->setZOrder(-10);
 
-        if (sidebar)
-            sidebar->setZOrder(-2);
+    auto modules = createMenuLabel(
+        "MODULES",
+        0.38f * scale,
+        {142, 147, 143}
+    );
 
-        auto section = createMenuLabel(
-            "MODULES",
-            0.32f,
-            {126, 131, 143}
-        );
-
-        if (section) {
-            section->setAnchorPoint({0.f, 0.5f});
-            section->setPosition({
-                sidebarLeft + 13.f,
-                sidebarTop - 18.f
-            });
-            m_mainLayer->addChild(section, 5);
-        }
-
-        float const viewportLeft = sidebarLeft + 8.f;
-        float const viewportBottom = sidebarBottom + 9.f;
-        float const viewportWidth = sidebarWidth - 16.f;
-        float const viewportTop = sidebarTop - 36.f;
-        float const viewportHeight =
-            std::max(76.f, viewportTop - viewportBottom);
-
-        // The sidebar navigation itself is scrollable. On tall layouts all
-        // five tabs fit; on short/tall aspect ratios the same controls remain
-        // usable instead of shrinking into unreadable buttons.
-        auto tabScroll = geode::ScrollLayer::create(
-            {viewportWidth, viewportHeight},
-            true,
-            false
-        );
-
-        if (!tabScroll)
-            return;
-
-        tabScroll->setPosition({
-            viewportLeft,
-            viewportBottom
+    if (modules) {
+        modules->setAnchorPoint({0.f, 0.5f});
+        modules->setPosition({
+            45.f * scale,
+            m_size.height - 137.5f * scale
         });
-        tabScroll->setZOrder(3);
-        m_mainLayer->addChild(tabScroll, 3);
-
-        float const itemWidth = viewportWidth - 6.f;
-        float const itemHeight = 36.f;
-        float const itemGap = 6.f;
-        float const contentHeight =
-            8.f +
-            5.f * itemHeight +
-            4.f * itemGap +
-            8.f;
-
-        tabScroll->m_contentLayer->setContentSize({
-            viewportWidth,
-            contentHeight
-        });
-
-        auto tabContentMenu =
-            createModernMenu(tabScroll->m_contentLayer);
-
-        if (!tabContentMenu)
-            return;
-
-        for (int i = 0; i < 5; ++i) {
-            float const y =
-                contentHeight - 8.f - itemHeight / 2.f -
-                i * (itemHeight + itemGap);
-
-            auto item = CCLayerColor::create(
-                i == m_currentTab
-                    ? ccColor4B{31, 64, 46, 255}
-                    : ccColor4B{24, 27, 26, 255},
-                itemWidth,
-                itemHeight
-            );
-
-            if (!item)
-                continue;
-
-            item->ignoreAnchorPointForPosition(false);
-            item->setAnchorPoint({0.5f, 0.5f});
-
-            auto label = createMenuLabel(
-                tabs[i],
-                0.46f,
-                {229, 235, 229}
-            );
-
-            if (label) {
-                label->setAnchorPoint({0.f, 0.5f});
-                label->setPosition({
-                    25.f,
-                    itemHeight / 2.f
-                });
-                label->setTag(7002);
-                label->limitLabelWidth(
-                    itemWidth - 38.f,
-                    0.46f,
-                    0.18f
-                );
-                item->addChild(label);
-            }
-
-            auto accent = CCLayerColor::create(
-                {38, 89, 59, 255},
-                4.f,
-                itemHeight - 12.f
-            );
-
-            if (accent) {
-                accent->setPosition({6.f, 6.f});
-                accent->setTag(7003);
-                accent->setVisible(i == m_currentTab);
-                item->addChild(accent, 2);
-            }
-
-            auto button = CCMenuItemSpriteExtra::create(
-                item,
-                this,
-                menu_selector(ModMenu::onTab)
-            );
-
-            if (!button)
-                continue;
-
-            button->setTag(i);
-            button->setPosition({
-                viewportWidth / 2.f,
-                y
-            });
-            tabContentMenu->addChild(button);
-        }
-
-        if (contentHeight > viewportHeight + 1.f) {
-            auto bar = geode::Scrollbar::create(tabScroll);
-            if (bar) {
-                bar->setAnchorPoint({0.5f, 0.5f});
-                bar->setPosition({
-                    sidebarLeft + sidebarWidth - 7.f,
-                    viewportBottom + viewportHeight / 2.f
-                });
-                bar->setZOrder(8);
-                m_mainLayer->addChild(bar, 8);
-            }
-        }
-
-        return;
+        m_mainLayer->addChild(modules, 5);
     }
 
-    auto const grid = getCompactTabGrid(m_size.width);
-    float const pad = std::clamp(m_size.width * 0.035f, 12.f, 18.f);
-    float const top = m_size.height - 84.f;
-    float const width =
-        (m_size.width - pad * 2.f - grid.gap * (grid.columns - 1))
-        / static_cast<float>(grid.columns);
+    float const buttonWidth = 154.f * scale;
+    float const buttonHeight = 42.f * scale;
+    float const buttonCenterX = 118.f * scale;
 
     for (int i = 0; i < 5; ++i) {
-        auto item = CCLayerColor::create(
+        float const centerFromTop =
+            (179.f + i * 55.f) * scale;
+
+        auto item = createRoundedLayerColor(
             i == m_currentTab
-                ? ccColor4B{31, 64, 46, 255}
-                : ccColor4B{24, 27, 26, 255},
-            std::max(72.f, width),
-            grid.height - 2.f
+                ? ccColor3B{31, 64, 46}
+                : ccColor3B{24, 27, 26},
+            {buttonWidth, buttonHeight},
+            8.f * scale
         );
 
         if (!item)
             continue;
 
-        item->ignoreAnchorPointForPosition(false);
-        item->setAnchorPoint({0.5f, 0.5f});
-
-        float const labelScale =
-            grid.columns == 2 ? 0.37f :
-            grid.columns == 3 ? 0.41f :
-            0.45f;
-
         auto label = createMenuLabel(
             tabs[i],
-            labelScale,
+            0.46f * scale,
             {229, 235, 229}
         );
 
         if (label) {
-            label->setTag(7002);
-            label->setPosition(item->getContentSize() / 2.f);
-            label->limitLabelWidth(
-                width - 12.f,
-                labelScale,
-                0.14f
-            );
-            item->addChild(label);
-        }
-
-        auto accent = CCLayerColor::create(
-            {38, 89, 59, 255},
-            std::max(8.f, width - 10.f),
-            3.f
-        );
-
-        if (accent) {
-            accent->setPosition({
-                5.f,
-                item->getContentSize().height - 6.f
+            label->setAnchorPoint({0.f, 0.5f});
+            label->setPosition({
+                15.f * scale,
+                buttonHeight / 2.f
             });
-            accent->setTag(7003);
-            accent->setVisible(i == m_currentTab);
-            item->addChild(accent, 2);
+            item->addChild(label);
         }
 
         auto button = CCMenuItemSpriteExtra::create(
@@ -1783,49 +1601,74 @@ void ModMenu::createTabBar() {
         if (!button)
             continue;
 
-        int const row = i / grid.columns;
-        int const col = i % grid.columns;
-
         button->setTag(i);
         button->setPosition({
-            pad + width / 2.f + col * (width + grid.gap),
-            top - row * (grid.height + 6.f)
+            buttonCenterX,
+            m_size.height - centerFromTop
         });
         menu->addChild(button);
     }
 }
 
-
 void ModMenu::createContentPanel() {
+    float const scale = std::min(
+        1.f,
+        m_size.width / 1200.f
+    );
+
     bool const compact = isCompactMenu(m_size.width);
 
-    float const sidebarWidth = compact
-        ? 0.f
-        : std::clamp(m_size.width * 0.18f, 150.f, 190.f);
+    if (compact) {
+        float const width = m_size.width - 32.f * scale;
+        float const height = m_size.height - 180.f * scale;
 
-    float const navHeight =
-        compact ? getCompactTabGrid(m_size.width).navHeight : 0.f;
+        m_contentPanel = CCNode::create();
+        if (!m_contentPanel)
+            return;
 
-    float const left = compact
-        ? 12.f
-        : sidebarWidth + 28.f;
+        m_contentPanel->setContentSize({width, height});
+        m_contentPanel->setPosition({
+            16.f * scale,
+            16.f * scale
+        });
+        m_mainLayer->addChild(m_contentPanel);
 
-    float const top =
-        m_size.height - 110.f - navHeight;
-
-    float const width =
-        std::max(150.f, m_size.width - left - 14.f);
-
-    float const height =
-        std::max(120.f, top - 12.f);
+        onTab(nullptr);
+        return;
+    }
 
     m_contentPanel = CCNode::create();
     if (!m_contentPanel)
         return;
 
-    m_contentPanel->setContentSize({width, height});
-    m_contentPanel->setPosition({left, 14.f});
+    float const panelWidth = 924.f * scale;
+    float const panelHeight = 570.f * scale;
+
+    m_contentPanel->setContentSize({
+        panelWidth,
+        panelHeight
+    });
+
+    m_contentPanel->setPosition({
+        220.f * scale,
+        40.f * scale
+    });
+
     m_mainLayer->addChild(m_contentPanel);
+
+    auto panel = createModernPanel(
+        m_contentPanel,
+        {
+            panelWidth / 2.f,
+            panelHeight / 2.f
+        },
+        {panelWidth, panelHeight},
+        {19, 22, 20},
+        255
+    );
+
+    if (panel)
+        panel->setZOrder(-10);
 
     onTab(nullptr);
 }
