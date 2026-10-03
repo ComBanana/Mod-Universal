@@ -805,12 +805,9 @@ CCSize getResponsivePopupSize(float preferredWidth, float preferredHeight) {
     float targetHeight = 720.f;
 
     if (aspect < 0.95f) {
+        // Portrait uses the dedicated 430x760 Figma compact composition.
         targetWidth = 430.f;
         targetHeight = 760.f;
-    }
-    else if (aspect < 1.45f) {
-        targetWidth = 960.f;
-        targetHeight = 700.f;
     }
 
     float const availableWidth = std::max(220.f, screen.width - 24.f);
