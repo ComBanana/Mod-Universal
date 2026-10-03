@@ -824,7 +824,6 @@ CCSize getResponsivePopupSize(float preferredWidth, float preferredHeight) {
     // Use the real window aspect ratio to decide orientation, while keeping
     // the requested popup's own reference size. Popup dimensions are scaled
     // in Cocos window points so high-DPI physical pixels do not inflate them.
-    auto const aspect = getWindowAspect();
     auto const screen = CCDirector::sharedDirector()->getWinSize();
 
     float const targetWidth = preferredWidth;
