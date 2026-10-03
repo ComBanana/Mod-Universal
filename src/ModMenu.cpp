@@ -784,8 +784,8 @@ CCLayerColor* createFeatureCard(
         });
         desc->limitLabelWidth(
             290.f * scale,
-            0.62f * scale,
-            0.36f * scale
+            0.72f * scale,
+            0.50f * scale
         );
         card->addChild(desc, 2);
     }
@@ -1643,8 +1643,8 @@ void ModMenu::createHeader() {
                 m_size.height - 56.f * scale
             },
             {
-                78.f * scale,
-                24.f * scale
+                72.f * scale,
+                22.f * scale
             },
             [this]() {
                 this->onSetAllToDefault(nullptr);
