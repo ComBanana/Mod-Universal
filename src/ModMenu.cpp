@@ -84,187 +84,6 @@ CCLayerColor* createRoundedLayerColor(
     ccColor3B color,
     CCSize size,
     float radius,
-    GLubyte opacity = 255
-);
-
-void setRoundedLayerColor(
-    CCLayerColor* layer,
-    ccColor3B color,
-    GLubyte opacity = 255
-);
-
-CCMenuItemSpriteExtra* createHackDefaultButton(
-    CCMenu* menu,
-    std::vector<std::string> settingKeys,
-    CCPoint position
-) {
-    if (!menu || settingKeys.empty())
-        return nullptr;
-
-    bool const showButton = !areSettingsAtDefault(settingKeys);
-
-    auto background = CCLayerColor::create(
-        {31, 36, 33, 255},
-        58.f,
-        28.f
-    );
-
-    if (!background)
-        return nullptr;
-
-    background->ignoreAnchorPointForPosition(false);
-    background->setAnchorPoint({0.5f, 0.5f});
-
-    auto label = CCLabelBMFont::create("RESET", "chatFont.fnt");
-
-    if (label) {
-        label->setScale(0.40f);
-        label->setColor({229, 235, 229});
-        label->setPosition(background->getContentSize() / 2.f);
-        background->addChild(label);
-    }
-
-    auto button = CCMenuItemExt::createSpriteExtra(
-        background,
-        [keys = std::move(settingKeys)](CCMenuItemSpriteExtra*) {
-            resetSettingsToDefault(keys);
-            ModMenu::refreshCurrentTab();
-        }
-    );
-
-    if (!button)
-        return nullptr;
-
-    button->setPosition(position);
-    button->setVisible(showButton);
-    menu->addChild(button);
-    return button;
-}
-
-WeakRef<CCMenuItemSpriteExtra> s_noclipDefaultButton;
-WeakRef<CCMenuItemSpriteExtra> s_noclipSettingsButton;
-WeakRef<CCMenuItemSpriteExtra> s_noclipCheckboxButton;
-float s_noclipRowY = 0.f;
-
-void updateNoclipRowLayout() {
-    bool const hasNoclipChanges = !areSettingsAtDefault(NoclipSettingKeys);
-
-    auto defaultButton = s_noclipDefaultButton.lock();
-    auto settingsButton = s_noclipSettingsButton.lock();
-    auto checkboxButton = s_noclipCheckboxButton.lock();
-
-    CCNode* anchorNode =
-        defaultButton ? static_cast<CCNode*>(defaultButton) :
-        settingsButton ? static_cast<CCNode*>(settingsButton) :
-        checkboxButton ? static_cast<CCNode*>(checkboxButton) :
-        nullptr;
-
-    if (!anchorNode)
-        return;
-
-    auto menu = anchorNode->getParent();
-    auto panel = menu ? menu->getParent() : nullptr;
-    if (!panel)
-        return;
-
-    float const panelWidth = panel->getContentSize().width;
-    bool const compact = panelWidth < 560.f;
-
-    float const toggleWidth =
-        checkboxButton
-            ? checkboxButton->getContentSize().width
-            : (compact ? 72.f : 74.f);
-
-    float const settingsWidth =
-        settingsButton
-            ? settingsButton->getContentSize().width
-            : 74.f;
-
-    float const resetWidth =
-        defaultButton
-            ? defaultButton->getContentSize().width
-            : 58.f;
-
-    float const gap = compact ? 8.f : 10.f;
-
-    float const controlWidth =
-        toggleWidth +
-        gap + settingsWidth +
-        (hasNoclipChanges ? gap + resetWidth : 0.f);
-
-    bool const stackControls = panelWidth < 360.f;
-
-    float const startX = stackControls
-        ? (panelWidth - controlWidth) / 2.f
-        : panelWidth - (compact ? 18.f : 22.f) - controlWidth;
-
-    float currentX = startX;
-
-    if (defaultButton) {
-        defaultButton->setVisible(hasNoclipChanges);
-        defaultButton->setPosition({
-            currentX + resetWidth / 2.f,
-            s_noclipRowY
-        });
-    }
-
-    if (hasNoclipChanges)
-        currentX += resetWidth + gap;
-
-    if (settingsButton) {
-        settingsButton->setPosition({
-            currentX + settingsWidth / 2.f,
-            s_noclipRowY
-        });
-    }
-
-    currentX += settingsWidth + gap;
-
-    if (checkboxButton)
-        checkboxButton->setPosition({
-            currentX + toggleWidth / 2.f,
-            s_noclipRowY
-        });
-}
-
-void updateNoclipDefaultButton() {
-    updateNoclipRowLayout();
-}
-
-void saveNoclipButtonSettings() {
-    if (auto result = Mod::get()->saveData(); !result) {
-        log::error(
-            "Failed to save Noclip button settings: {}",
-            result.unwrapErr()
-        );
-    }
-}
-
-CCLabelBMFont* createMenuLabel(
-    char const* text,
-    float scale = 0.54f,
-    ccColor3B color = {235, 235, 240}
-) {
-    auto label = CCLabelBMFont::create(text, "chatFont.fnt");
-    if (!label)
-        return nullptr;
-
-    label->setScale(scale);
-    label->setColor(color);
-    return label;
-}
-
-CCLabelBMFont* createMutedMenuLabel(
-    char const* text,
-    float scale = 0.37f
-) {
-    return createMenuLabel(text, scale, {155, 158, 168});
-}
-
-CCLayerColor* createRoundedLayerColor(
-    ccColor3B color,
-    CCSize size,
-    float radius,
     GLubyte opacity
 ) {
     if (size.width <= 0.f || size.height <= 0.f)
@@ -301,8 +120,8 @@ CCLayerColor* createRoundedLayerColor(
         opacity / 255.f
     };
 
-    // Build the rounded rectangle from two clean rectangles plus four
-    // circles. drawCircle produces a true circular corner on GD 2.2081.
+    // Compose the rounded rectangle from two rectangles and four true
+    // circles. This gives clean, symmetric Figma-style corners on GD 2.2081.
     if (size.width > radiusClamped * 2.f) {
         draw->drawRect(
             {radiusClamped, 0.f},
@@ -355,8 +174,10 @@ CCLayerColor* createRoundedLayerColor(
         {0.f, 0.f, 0.f, 0.f},
         32
     );
-}
 
+    layer->addChild(draw, 0);
+    return layer;
+}
 void setRoundedLayerColor(
     CCLayerColor* layer,
     ccColor3B color,
@@ -417,24 +238,39 @@ void setRoundedLayerColor(
         );
     }
 
-    draw->drawDot({radiusClamped, radiusClamped}, radiusClamped, fill);
-    draw->drawDot(
+    draw->drawCircle(
+        {radiusClamped, radiusClamped},
+        radiusClamped,
+        fill,
+        0.f,
+        {0.f, 0.f, 0.f, 0.f},
+        32
+    );
+    draw->drawCircle(
         {size.width - radiusClamped, radiusClamped},
         radiusClamped,
-        fill
+        fill,
+        0.f,
+        {0.f, 0.f, 0.f, 0.f},
+        32
     );
-    draw->drawDot(
+    draw->drawCircle(
         {size.width - radiusClamped, size.height - radiusClamped},
         radiusClamped,
-        fill
+        fill,
+        0.f,
+        {0.f, 0.f, 0.f, 0.f},
+        32
     );
-    draw->drawDot(
+    draw->drawCircle(
         {radiusClamped, size.height - radiusClamped},
         radiusClamped,
-        fill
+        fill,
+        0.f,
+        {0.f, 0.f, 0.f, 0.f},
+        32
     );
 }
-
 CCLayerColor* createModernPanel(
     CCNode* parent,
     CCPoint center,
