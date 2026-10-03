@@ -242,7 +242,7 @@ CCLayerColor* createModernPanel(
     CCNode* parent,
     CCPoint center,
     CCSize size,
-    ccColor3B color = {31, 33, 39},
+    ccColor3B color = {19, 22, 20},
     GLubyte opacity = 255
 ) {
     if (!parent || size.width <= 0.f || size.height <= 0.f)
@@ -296,8 +296,8 @@ CCMenuItemSpriteExtra* createModernActionButton(
 
     auto background = CCLayerColor::create(
         accent
-            ? ccColor4B{75, 190, 138, 255}
-            : ccColor4B{52, 56, 66, 255},
+            ? ccColor4B{38, 89, 59, 255}
+            : ccColor4B{31, 36, 33, 255},
         size.width,
         size.height
     );
@@ -350,8 +350,8 @@ CCMenuItemSpriteExtra* createModernToggle(
 
     auto background = CCLayerColor::create(
         enabled
-            ? ccColor4B{75, 190, 138, 255}
-            : ccColor4B{52, 56, 66, 255},
+            ? ccColor4B{38, 89, 59, 255}
+            : ccColor4B{31, 36, 33, 255},
         size.width,
         size.height
     );
@@ -390,8 +390,8 @@ CCMenuItemSpriteExtra* createModernToggle(
                 return;
 
             bg->setColor(next
-                ? ccColor3B{75, 190, 138}
-                : ccColor3B{52, 56, 66}
+                ? ccColor3B{38, 89, 59}
+                : ccColor3B{31, 36, 33}
             );
 
             auto stateLabel = typeinfo_cast<CCLabelBMFont*>(
@@ -438,8 +438,8 @@ CCMenuItemSpriteExtra* createModernToggle(
                     if (statePill) {
                         statePill->setColor(
                             next
-                                ? ccColor3B{75, 190, 138}
-                                : ccColor3B{52, 56, 66}
+                                ? ccColor3B{38, 89, 59}
+                                : ccColor3B{31, 36, 33}
                         );
                     }
 
@@ -515,8 +515,8 @@ CCLayerColor* createStatusPill(
 
     auto pill = CCLayerColor::create(
         active
-            ? ccColor4B{75, 190, 138, 255}
-            : ccColor4B{52, 56, 66, 255},
+            ? ccColor4B{38, 89, 59, 255}
+            : ccColor4B{31, 36, 33, 255},
         width,
         24.f
     );
@@ -567,7 +567,7 @@ CCLayerColor* createFeatureCard(
         return nullptr;
 
     auto card = CCLayerColor::create(
-        {38, 41, 49, 255},
+        {24, 27, 26, 255},
         size.width,
         size.height
     );
@@ -585,7 +585,7 @@ CCLayerColor* createFeatureCard(
 
     auto accent = CCLayerColor::create(
         active
-            ? ccColor4B{75, 190, 138, 255}
+            ? ccColor4B{38, 89, 59, 255}
             : ccColor4B{63, 67, 78, 255},
         4.f,
         std::max(24.f, size.height - 28.f)
@@ -620,7 +620,7 @@ CCLayerColor* createFeatureCard(
     auto title = createMenuLabel(
         titleText,
         titleScale,
-        {235, 238, 243}
+        {229, 235, 229}
     );
 
     if (title) {
@@ -1086,7 +1086,7 @@ protected:
         m_mainLayer->addChild(collisionLabel);
 
         m_blockModeBackground = CCLayerColor::create(
-            {52, 56, 66, 255},
+            {31, 36, 33, 255},
             132.f,
             34.f
         );
@@ -1239,8 +1239,8 @@ protected:
         if (m_blockModeBackground)
             m_blockModeBackground->setColor(
                 next == "no-touch"
-                    ? ccColor3B{75, 190, 138}
-                    : ccColor3B{52, 56, 66}
+                    ? ccColor3B{38, 89, 59}
+                    : ccColor3B{31, 36, 33}
             );
 
         if (m_blockModeLabel) {
@@ -1381,7 +1381,7 @@ void ModMenu::createHeader() {
             compact
                 ? std::max(12.f, logoWidth / 2.f + 8.f)
                 : 18.f + sidebarWidth / 2.f,
-            m_size.height - 27.f
+            m_size.height - 56.f
         });
 
         m_mainLayer->addChild(logo, 10);
@@ -1391,7 +1391,7 @@ void ModMenu::createHeader() {
         m_mainLayer,
         {
             m_size.width - 78.f,
-            m_size.height - 27.f
+            m_size.height - 56.f
         },
         "v0.2.0",
         false,
@@ -1419,7 +1419,7 @@ void ModMenu::createHeader() {
             auto reset = createModernActionButton(
                 headerMenu,
                 "Set to Default",
-                {resetCenterX, m_size.height - 27.f},
+                {resetCenterX, m_size.height - 56.f},
                 {resetWidth, 30.f},
                 [this]() {
                     this->onSetAllToDefault(nullptr);
@@ -1433,7 +1433,7 @@ void ModMenu::createHeader() {
 
     createModernDivider(
         m_mainLayer,
-        {m_size.width / 2.f, m_size.height - 69.f},
+        {m_size.width / 2.f, m_size.height - 92.f},
         m_size.width - (compact ? 32.f : 44.f)
     );
 }
@@ -1474,7 +1474,7 @@ void ModMenu::createTabBar() {
                 sidebarBottom + sidebarHeight / 2.f
             },
             {sidebarWidth, sidebarHeight},
-            {27, 29, 35},
+            {19, 22, 20},
             255
         );
 
@@ -1549,8 +1549,8 @@ void ModMenu::createTabBar() {
 
             auto item = CCLayerColor::create(
                 i == m_currentTab
-                    ? ccColor4B{50, 54, 63, 255}
-                    : ccColor4B{43, 46, 54, 255},
+                    ? ccColor4B{31, 64, 46, 255}
+                    : ccColor4B{24, 27, 26, 255},
                 itemWidth,
                 itemHeight
             );
@@ -1564,7 +1564,7 @@ void ModMenu::createTabBar() {
             auto label = createMenuLabel(
                 tabs[i],
                 0.46f,
-                {220, 223, 229}
+                {229, 235, 229}
             );
 
             if (label) {
@@ -1583,7 +1583,7 @@ void ModMenu::createTabBar() {
             }
 
             auto accent = CCLayerColor::create(
-                {75, 190, 138, 255},
+                {38, 89, 59, 255},
                 4.f,
                 itemHeight - 12.f
             );
@@ -1638,8 +1638,8 @@ void ModMenu::createTabBar() {
     for (int i = 0; i < 5; ++i) {
         auto item = CCLayerColor::create(
             i == m_currentTab
-                ? ccColor4B{50, 54, 63, 255}
-                : ccColor4B{43, 46, 54, 255},
+                ? ccColor4B{31, 64, 46, 255}
+                : ccColor4B{24, 27, 26, 255},
             std::max(72.f, width),
             grid.height - 2.f
         );
@@ -1658,7 +1658,7 @@ void ModMenu::createTabBar() {
         auto label = createMenuLabel(
             tabs[i],
             labelScale,
-            {220, 223, 229}
+            {229, 235, 229}
         );
 
         if (label) {
@@ -1673,7 +1673,7 @@ void ModMenu::createTabBar() {
         }
 
         auto accent = CCLayerColor::create(
-            {75, 190, 138, 255},
+            {38, 89, 59, 255},
             std::max(8.f, width - 10.f),
             3.f
         );
@@ -1725,7 +1725,7 @@ void ModMenu::createContentPanel() {
         : sidebarWidth + 28.f;
 
     float const top =
-        m_size.height - 82.f - navHeight;
+        m_size.height - 110.f - navHeight;
 
     float const width =
         std::max(150.f, m_size.width - left - 14.f);
@@ -1821,8 +1821,8 @@ void ModMenu::onTab(CCObject* sender) {
             if (label) {
                 label->setColor(
                     selected
-                        ? ccColor3B{238, 241, 245}
-                        : ccColor3B{220, 223, 229}
+                        ? ccColor3B{229, 235, 229}
+                        : ccColor3B{229, 235, 229}
                 );
             }
 
