@@ -790,14 +790,42 @@ CCLayerColor* createFeatureCard(
     return card;
 }
 
+CCSize getAspectReferenceSize() {
+    auto const director = CCDirector::sharedDirector();
+
+    if (director) {
+        auto const view = director->getOpenGLView();
+
+        if (view) {
+            auto const& frame = view->getFrameSize();
+
+            // getFrameSize() is the real EGL/window frame size. This avoids
+            // making the menu's orientation decision from a scaled popup
+            // size, which can incorrectly turn a small landscape window into
+            // the portrait layout.
+            if (frame.width > 1.f && frame.height > 1.f)
+                return frame;
+        }
+
+        auto const winSize = director->getWinSize();
+        if (winSize.width > 1.f && winSize.height > 1.f)
+            return winSize;
+    }
+
+    return {1.f, 1.f};
+}
+
+float getWindowAspect() {
+    auto const size = getAspectReferenceSize();
+    return size.width / std::max(1.f, size.height);
+}
+
 CCSize getResponsivePopupSize(float preferredWidth, float preferredHeight) {
     (void)preferredWidth;
     (void)preferredHeight;
 
-    auto const screen = CCDirector::sharedDirector()->getWinSize();
-
-    float const aspect =
-        screen.height > 1.f ? screen.width / screen.height : 1.f;
+    auto const screen = getAspectReferenceSize();
+    float const aspect = getWindowAspect();
 
     float targetWidth = 1200.f;
     float targetHeight = 720.f;
@@ -825,8 +853,10 @@ CCSize getResponsivePopupSize(float preferredWidth, float preferredHeight) {
     };
 }
 
-bool isCompactMenu(float width) {
-    return width < 760.f;
+bool isCompactMenu() {
+    // Layout mode must follow the real screen orientation, not the popup's
+    // scaled width. A small landscape window is still landscape.
+    return getWindowAspect() < 0.95f;
 }
 
 struct CompactTabGrid {
@@ -1401,9 +1431,7 @@ public:
 bool ModMenu::init() {
     ensureSettingsFile();
 
-    auto const screen = CCDirector::sharedDirector()->getWinSize();
-    float const aspect =
-        screen.height > 1.f ? screen.width / screen.height : 1.f;
+    float const aspect = getWindowAspect();
 
     auto const popupSize = getResponsivePopupSize(
         aspect < 0.95f ? 430.f : aspect < 1.45f ? 960.f : 1200.f,
@@ -1480,7 +1508,7 @@ bool ModMenu::init() {
 }
 
 void ModMenu::createHeader() {
-    bool const compact = isCompactMenu(m_size.width);
+    bool const compact = isCompactMenu();
 
     if (compact) {
         float const scale = std::min(
