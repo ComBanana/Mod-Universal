@@ -340,8 +340,7 @@ CCLayerColor* createRoundedLayerColor(
             opacity / 255.f
         },
         0.f,
-        {0.f, 0.f, 0.f, 0.f},
-        cocos2d::BorderAlignment::CENTER
+        {0.f, 0.f, 0.f, 0.f}
     );
 
     layer->addChild(draw, 0);
@@ -424,8 +423,7 @@ void setRoundedLayerColor(
             opacity / 255.f
         },
         0.f,
-        {0.f, 0.f, 0.f, 0.f},
-        cocos2d::BorderAlignment::CENTER
+        {0.f, 0.f, 0.f, 0.f}
     );
 }
 
