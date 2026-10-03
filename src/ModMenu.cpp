@@ -351,7 +351,14 @@ void setRoundedLayerColor(
         return;
 
     CCSize const size = layer->getContentSize();
-    float const radius = std::min(size.width, size.height) * 0.12f;
+    float const radius =
+        size.height <= 30.f
+            ? size.height / 2.f
+            : size.height <= 38.f
+                ? 7.f
+                : size.height <= 50.f
+                    ? 8.f
+                    : 10.f;
 
     draw->clear();
 
@@ -772,6 +779,9 @@ CCLayerColor* createFeatureCard(
 }
 
 CCSize getResponsivePopupSize(float preferredWidth, float preferredHeight) {
+    (void)preferredWidth;
+    (void)preferredHeight;
+
     auto const screen = CCDirector::sharedDirector()->getWinSize();
 
     float const aspect =
@@ -1397,14 +1407,8 @@ bool ModMenu::init() {
     if (m_bgSprite)
         m_bgSprite->setVisible(false);
 
-    if (m_closeBtn) {
-        m_closeBtn->setAnchorPoint({0.5f, 0.5f});
-        m_closeBtn->setPosition({
-            m_size.width - 20.f,
-            m_size.height - 20.f
-        });
-        m_closeBtn->setScale(0.70f);
-    }
+    if (m_closeBtn)
+        m_closeBtn->setVisible(false);
 
     auto background = createModernPanel(
         m_mainLayer,
@@ -1416,6 +1420,46 @@ bool ModMenu::init() {
 
     if (background)
         background->setZOrder(-100);
+
+    auto closeMenu = createModernMenu(m_mainLayer);
+    if (closeMenu) {
+        auto closeBackground = createRoundedLayerColor(
+            {31, 36, 33},
+            {28.f, 28.f},
+            7.f
+        );
+
+        if (closeBackground) {
+            auto closeLabel = CCLabelBMFont::create(
+                "×",
+                "chatFont.fnt"
+            );
+
+            if (closeLabel) {
+                closeLabel->setScale(0.55f);
+                closeLabel->setColor({229, 235, 229});
+                closeLabel->setPosition(
+                    closeBackground->getContentSize() / 2.f
+                );
+                closeBackground->addChild(closeLabel);
+            }
+
+            auto closeButton = CCMenuItemExt::createSpriteExtra(
+                closeBackground,
+                [this](CCMenuItemSpriteExtra*) {
+                    this->onClose(nullptr);
+                }
+            );
+
+            if (closeButton) {
+                closeButton->setPosition({
+                    m_size.width - 20.f,
+                    m_size.height - 56.f
+                });
+                closeMenu->addChild(closeButton);
+            }
+        }
+    }
 
     createHeader();
     createTabBar();
@@ -1584,6 +1628,7 @@ void ModMenu::createTabBar() {
         );
 
         if (label) {
+            label->setTag(7002);
             label->setAnchorPoint({0.f, 0.5f});
             label->setPosition({
                 15.f * scale,
