@@ -773,8 +773,8 @@ CCLayerColor* createFeatureCard(
         });
         desc->limitLabelWidth(
             290.f * scale,
-            0.47f * scale,
-            0.25f * scale
+            0.54f * scale,
+            0.29f * scale
         );
         card->addChild(desc, 2);
     }
