@@ -47,7 +47,7 @@ $on_mod(Loaded) {
                 return;
 
             ModMenu::setNoclipEnabled(!ModMenu::isNoclipEnabled());
-            overlay::saveModData();
+            mu::overlay::saveModData();
             ModMenu::refreshCurrentTab();
         }
     );
@@ -61,7 +61,7 @@ $on_mod(Loaded) {
             bool const enabled =
                 !Mod::get()->getSettingValue<bool>("show-hitboxes");
             Mod::get()->setSettingValue<bool>("show-hitboxes", enabled);
-            overlay::saveModData();
+            mu::overlay::saveModData();
             ModMenu::refreshCurrentTab();
         }
     );
