@@ -129,32 +129,18 @@ CCNode* createFeatureCard(catalog::FeatureDef const& feature, CCSize size) {
     }
 
     if (feature.hasSettings && feature.openSettings && feature.settingsEnabled) {
-        // Use Geometry Dash's native options gear so the control looks at home
-        // in-game. Keep its hitbox and image near the card's bottom-right corner.
-        auto gear = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
-        if (gear) {
-            auto const spriteSize = gear->getContentSize();
-            float const maxDimension = std::max(spriteSize.width, spriteSize.height);
-            if (maxDimension > 0.f)
-                gear->setScale((20.f * scale) / maxDimension);
-
-            auto button = CCMenuItemExt::createSpriteExtra(
-                gear,
-                [open = feature.openSettings](CCMenuItemSpriteExtra*) {
-                    if (open)
-                        open();
-                }
-            );
-
-            if (button) {
-                ui::disablePressAnim(button);
-                button->setPosition({
-                    size.width - 20.f * scale,
-                    18.f * scale
-                });
-                menu->addChild(button, 15);
+        ui::settingsButton(
+            menu,
+            {
+                size.width - 24.f * scale,
+                22.f * scale
+            },
+            {34.f * scale, 34.f * scale},
+            [open = feature.openSettings]() {
+                if (open)
+                    open();
             }
-        }
+        );
     }
 
     return card;
