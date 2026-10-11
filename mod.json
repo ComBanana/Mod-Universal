@@ -31,6 +31,12 @@
 			"default": false,
 			"category": "universal"
 		},
+		"show-hitboxes-advanced": {
+			"type": "bool",
+			"name": "Advanced Hitboxes",
+			"default": false,
+			"category": "universal"
+		},
 		"noclip-enabled": {
 			"type": "bool",
 			"name": "Noclip",
