@@ -3,43 +3,12 @@
 #include <Geode/cocos/draw_nodes/CCDrawNode.h>
 
 #include <algorithm>
-#include <cmath>
-#include <vector>
 
 namespace mu::ui {
 namespace {
 
 constexpr int DrawTag = 9001;
 constexpr int LabelTag = 7001;
-
-std::vector<CCPoint> roundedPolygon(CCSize size, float radius) {
-    float const r = std::clamp(
-        radius,
-        0.f,
-        std::min(size.width, size.height) / 2.f
-    );
-
-    std::vector<CCPoint> points;
-    points.reserve(36);
-
-    auto arc = [&](float cx, float cy, float start, float end) {
-        int const segments = 8;
-        for (int i = 0; i <= segments; ++i) {
-            float const t = start + (end - start) * (i / static_cast<float>(segments));
-            points.push_back({
-                cx + r * std::cos(t),
-                cy + r * std::sin(t)
-            });
-        }
-    };
-
-    constexpr float pi = 3.14159265f;
-    arc(size.width - r, r, -pi / 2.f, 0.f);
-    arc(size.width - r, size.height - r, 0.f, pi / 2.f);
-    arc(r, size.height - r, pi / 2.f, pi);
-    arc(r, r, pi, pi * 1.5f);
-    return points;
-}
 
 void paintRounded(
     CCDrawNode* draw,
@@ -53,9 +22,11 @@ void paintRounded(
 
     draw->clear();
 
-    auto const points = roundedPolygon(size, radius);
-    if (points.size() < 3)
-        return;
+    float const r = std::clamp(
+        radius,
+        0.f,
+        std::min(size.width, size.height) / 2.f
+    );
 
     ccColor4F const fill = {
         color.r / 255.f,
@@ -63,28 +34,41 @@ void paintRounded(
         color.b / 255.f,
         opacity / 255.f
     };
+    ccColor4F const transparent = {0.f, 0.f, 0.f, 0.f};
 
-    draw->drawPolygon(
-        const_cast<CCPoint*>(points.data()),
-        static_cast<unsigned int>(points.size()),
+    // Draw the middle strips plus four round corners. This avoids the
+    // triangle artifacts the polygon path produced for the scaled UI nodes.
+    if (size.width > r * 2.f) {
+        draw->drawRect(
+            {r, 0.f},
+            {size.width - r, size.height},
+            fill,
+            0.f,
+            transparent
+        );
+    }
+
+    if (size.height > r * 2.f) {
+        draw->drawRect(
+            {0.f, r},
+            {size.width, size.height - r},
+            fill,
+            0.f,
+            transparent
+        );
+    }
+
+    draw->drawCircle({r, r}, r, fill, 0.f, transparent, 32);
+    draw->drawCircle({size.width - r, r}, r, fill, 0.f, transparent, 32);
+    draw->drawCircle(
+        {size.width - r, size.height - r},
+        r,
         fill,
         0.f,
-        {0.f, 0.f, 0.f, 0.f}
+        transparent,
+        32
     );
-}
-
-float inferRadius(CCSize size) {
-    if (size.height <= 30.f)
-        return size.height / 2.f;
-    if (size.height <= 38.f)
-        return theme::ButtonRadius;
-    if (size.height <= 50.f)
-        return theme::TabRadius;
-    if (size.height <= 80.f)
-        return theme::HeaderRadius;
-    if (size.height <= 150.f)
-        return theme::CardRadius;
-    return theme::PanelRadius;
+    draw->drawCircle({r, size.height - r}, r, fill, 0.f, transparent, 32);
 }
 
 } // namespace
@@ -133,6 +117,7 @@ CCLayerColor* roundedRect(
 void setRoundedRectColor(
     CCLayerColor* layer,
     ccColor3B color,
+    float radius,
     GLubyte opacity
 ) {
     if (!layer)
@@ -145,7 +130,7 @@ void setRoundedRectColor(
     paintRounded(
         draw,
         layer->getContentSize(),
-        inferRadius(layer->getContentSize()),
+        radius,
         color,
         opacity
     );
@@ -257,7 +242,8 @@ void setPillAppearance(
 
     setRoundedRectColor(
         bg,
-        active ? theme::StatusOn : theme::StatusIdle
+        active ? theme::StatusOn : theme::StatusIdle,
+        bg->getContentSize().height / 2.f
     );
 
     if (auto caption = typeinfo_cast<CCLabelBMFont*>(bg->getChildByTag(LabelTag))) {
