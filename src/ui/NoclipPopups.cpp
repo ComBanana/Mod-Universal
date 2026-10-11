@@ -307,7 +307,8 @@ protected:
         bool const noTouch = next == "no-touch";
         ui::setRoundedRectColor(
             m_blockModeBackground,
-            noTouch ? theme::StatusOn : theme::Button
+            noTouch ? theme::StatusOn : theme::Button,
+            13.f
         );
 
         if (m_blockModeLabel)
