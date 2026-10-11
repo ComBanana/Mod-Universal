@@ -193,7 +193,8 @@ CCMenuItemSpriteExtra* textButton(
     if (!menu || !text)
         return nullptr;
 
-    auto bg = roundedRect(background, size, theme::ButtonRadius);
+    float const radiusScale = std::min(1.f, size.height / 34.f);
+    auto bg = roundedRect(background, size, theme::ButtonRadius * radiusScale);
     if (!bg)
         return nullptr;
 
@@ -272,7 +273,7 @@ CCMenuItemSpriteExtra* pillButton(
     if (!bg)
         return nullptr;
 
-    auto caption = label(text, 0.46f, theme::Text);
+    auto caption = label(text, 0.36f, theme::Text);
     if (!caption)
         return nullptr;
 
