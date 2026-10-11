@@ -15,6 +15,7 @@ constexpr int HitboxDrawNodeTag = 0x4D554842; // "MUHB"
 constexpr ccColor4F SolidHitboxColor = {0.20f, 0.72f, 1.00f, 0.95f};
 constexpr ccColor4F PassableHitboxColor = {0.24f, 1.00f, 0.72f, 0.95f};
 constexpr ccColor4F SlopeHitboxColor = {0.90f, 0.40f, 1.00f, 0.95f};
+constexpr ccColor4F InteractiveHitboxColor = {1.00f, 0.66f, 0.22f, 0.95f};
 constexpr ccColor4F HazardHitboxColor = {1.00f, 0.28f, 0.30f, 0.95f};
 constexpr ccColor4F PlayerHitboxColor = {1.00f, 0.90f, 0.24f, 1.00f};
 constexpr ccColor4F Transparent = {0.f, 0.f, 0.f, 0.f};
@@ -22,6 +23,12 @@ constexpr ccColor4F Transparent = {0.f, 0.f, 0.f, 0.f};
 bool getObjectHitboxColor(GameObject* object, ccColor4F& color) {
     if (!object)
         return false;
+
+    // Orbs, dash rings and portal-style RingObjects have contact hitboxes too.
+    if (typeinfo_cast<RingObject*>(object)) {
+        color = InteractiveHitboxColor;
+        return true;
+    }
 
     // Match the categories Geometry Dash uses for collision-capable objects.
     switch (object->m_objectType) {
