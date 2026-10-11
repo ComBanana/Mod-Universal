@@ -129,17 +129,20 @@ CCNode* createFeatureCard(catalog::FeatureDef const& feature, CCSize size) {
     }
 
     if (feature.hasSettings && feature.openSettings && feature.settingsEnabled) {
-        ui::settingsButton(
+        ui::textButton(
             menu,
+            "Configure",
             {
-                size.width - 24.f * scale,
-                22.f * scale
+                size.width - 18.f * scale - 46.f * scale,
+                18.f * scale
             },
-            {34.f * scale, 34.f * scale},
+            {92.f * scale, 28.f * scale},
             [open = feature.openSettings]() {
                 if (open)
                     open();
-            }
+            },
+            theme::Button,
+            theme::Text
         );
     }
 
