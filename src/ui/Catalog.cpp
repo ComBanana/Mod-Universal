@@ -77,8 +77,9 @@ std::vector<FeatureDef> const& features() {
             .tab = TabId::Player,
             .id = "show-hitboxes",
             .title = "Show Hitboxes",
-            .description = "Display collision hitboxes.",
-            .status = FeatureStatus::ComingSoon,
+            .description = "Display collision outlines during gameplay.",
+            .status = FeatureStatus::Toggle,
+            .toggleKey = "show-hitboxes",
         },
         {
             .tab = TabId::Player,
