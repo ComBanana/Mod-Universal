@@ -31,13 +31,13 @@ CCNode* createFeatureCard(catalog::FeatureDef const& feature, CCSize size) {
     card->ignoreAnchorPointForPosition(false);
     card->setAnchorPoint({0.5f, 0.5f});
 
-    auto background = ui::roundedRect(theme::Card, size, theme::CardRadius);
+    float const scale = size.height / theme::CardHeight;
+    auto background = ui::roundedRect(theme::Card, size, theme::CardRadius * scale);
     if (background) {
         background->setPosition(size / 2.f);
         card->addChild(background, 0);
     }
 
-    float const scale = size.height / theme::CardHeight;
     float const pad = 18.f * scale;
 
     auto title = ui::label(feature.title, 0.54f);
@@ -187,7 +187,11 @@ bool ModMenu::init() {
     if (m_closeBtn)
         m_closeBtn->setVisible(false);
 
-    auto background = ui::roundedRect(theme::Shell, m_size, theme::ShellRadius);
+    auto background = ui::roundedRect(
+        theme::Shell,
+        m_size,
+        theme::ShellRadius * overlay::desktopScale(m_size)
+    );
     if (background) {
         background->setPosition(m_size / 2.f);
         m_mainLayer->addChild(background, -100);
@@ -214,7 +218,7 @@ void ModMenu::createHeader() {
         {m_size.width / 2.f, headerY},
         {headerWidth, headerHeight},
         theme::Header,
-        compact ? theme::CompactHeaderRadius : theme::HeaderRadius
+        (compact ? theme::CompactHeaderRadius : theme::HeaderRadius) * scale
     );
 
     auto title = ui::label(
@@ -306,7 +310,7 @@ void ModMenu::createTabBar() {
             {m_size.width / 2.f, navY},
             {navWidth, navHeight},
             theme::Panel,
-            theme::CompactHeaderRadius
+            theme::CompactHeaderRadius * scale
         );
 
         int const count = static_cast<int>(tabs.size());
@@ -362,7 +366,8 @@ void ModMenu::createTabBar() {
         m_mainLayer,
         {sidebarLeft + sidebarWidth / 2.f, sidebarBottom + sidebarHeight / 2.f},
         {sidebarWidth, sidebarHeight},
-        theme::Panel
+        theme::Panel,
+        theme::PanelRadius * scale
     );
 
     auto modules = ui::label("MODULES", 0.66f * scale);
@@ -406,7 +411,7 @@ void ModMenu::createTabBar() {
         auto item = ui::roundedRect(
             i == m_currentTab ? theme::TabActive : theme::Card,
             {buttonWidth, buttonHeight},
-            theme::TabRadius
+            theme::TabRadius * scale
         );
         if (!item)
             continue;
@@ -480,7 +485,7 @@ void ModMenu::fillContent() {
         size / 2.f,
         size,
         theme::Panel,
-        compact ? theme::CompactHeaderRadius : theme::PanelRadius
+        (compact ? theme::CompactHeaderRadius : theme::PanelRadius) * scale
     );
 
     auto const& tab = catalog::tabs()[static_cast<size_t>(m_currentTab)];
