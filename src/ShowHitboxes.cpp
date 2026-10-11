@@ -4,6 +4,7 @@
 
 #include <array>
 #include <algorithm>
+#include <limits>
 
 using namespace geode::prelude;
 
