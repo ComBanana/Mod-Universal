@@ -6,20 +6,20 @@
 
 using namespace geode::prelude;
 
-class ModMenu : public geode::Popup
-{
+class ModMenu : public geode::Popup {
 protected:
     bool init();
 
     void createHeader();
     void createTabBar();
     void createContentPanel();
+    void fillContent();
+    void highlightTabs();
 
-        void onNoclipSettings(CCObject*);
     void onSetAllToDefault(CCObject*);
-
     void onTab(CCObject*);
     void onClose(CCObject* sender) override;
+    void keyBackClicked() override;
 
 public:
     static ModMenu* create();
@@ -43,5 +43,6 @@ private:
 
     CCNode* m_contentPanel = nullptr;
     geode::ScrollLayer* m_contentScroll = nullptr;
+    CCMenu* m_tabMenu = nullptr;
     int m_currentTab = 0;
 };
