@@ -19,6 +19,7 @@ protected:
     void onSetAllToDefault(CCObject*);
     void onTab(CCObject*);
     void onClose(CCObject* sender) override;
+    void keyBackClicked() override;
 
 public:
     static ModMenu* create();
