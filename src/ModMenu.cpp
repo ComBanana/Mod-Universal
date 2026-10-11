@@ -260,35 +260,27 @@ void ModMenu::createHeader() {
     float const right = m_size.width / 2.f + headerWidth / 2.f -
         (compact ? 16.f : 21.f) * scale;
 
-    if (compact) {
-        float const closeSize = 28.f * scale;
-        ui::textButton(
-            headerMenu,
-            "X",
-            {right - closeSize / 2.f, headerY},
-            {closeSize, closeSize},
-            [this]() { this->onClose(nullptr); }
-        );
+    float const closeSize = (compact ? 28.f : 34.f) * scale;
+    float const closeCenterX = right - closeSize / 2.f;
 
-        ui::textButton(
-            headerMenu,
-            "Set to Default",
-            {right - closeSize - 8.f * scale - resetWidth / 2.f, headerY},
-            {resetWidth, resetHeight},
-            [this]() { this->onSetAllToDefault(nullptr); }
-        );
-    }
-    else {
-        // The desktop 16:9 Figma frame has only one header action. Keeping the
-        // reset button at x=1029..1155 leaves the clean right margin intact.
-        ui::textButton(
-            headerMenu,
-            "Set to Default",
-            {right - resetWidth / 2.f, headerY},
-            {resetWidth, resetHeight},
-            [this]() { this->onSetAllToDefault(nullptr); }
-        );
-    }
+    ui::textButton(
+        headerMenu,
+        "X",
+        {closeCenterX, headerY},
+        {closeSize, closeSize},
+        [this]() { this->onClose(nullptr); }
+    );
+
+    ui::textButton(
+        headerMenu,
+        "Set to Default",
+        {
+            closeCenterX - closeSize / 2.f - 8.f * scale - resetWidth / 2.f,
+            headerY
+        },
+        {resetWidth, resetHeight},
+        [this]() { this->onSetAllToDefault(nullptr); }
+    );
 }
 
 void ModMenu::createTabBar() {
@@ -364,13 +356,16 @@ void ModMenu::createTabBar() {
 
     ui::panel(
         m_mainLayer,
-        {sidebarLeft + sidebarWidth / 2.f, sidebarBottom + sidebarHeight / 2.f},
+        {
+            sidebarLeft + sidebarWidth / 2.f,
+            sidebarBottom + sidebarHeight / 2.f
+        },
         {sidebarWidth, sidebarHeight},
         theme::Panel,
         theme::PanelRadius * scale
     );
 
-    auto modules = ui::label("MODULES", 0.66f * scale);
+    auto modules = ui::label("MODULES", 0.50f * scale);
     if (modules) {
         modules->setAnchorPoint({0.f, 0.5f});
         modules->setPosition({
@@ -380,32 +375,11 @@ void ModMenu::createTabBar() {
         m_mainLayer->addChild(modules, 5);
     }
 
-    auto scrollHeight = sidebarHeight - 52.f * scale;
-    auto scroll = ScrollLayer::create(
-        {sidebarWidth - 16.f * scale, scrollHeight},
-        true,
-        true
-    );
-    scroll->setPosition({
-        sidebarLeft + 8.f * scale,
-        sidebarBottom + 12.f * scale
-    });
-    m_mainLayer->addChild(scroll, 8);
-
-    auto content = scroll->m_contentLayer;
-    content->setLayout(
-        ColumnLayout::create()
-            ->setAxisReverse(true)
-            ->setAutoGrowAxis(scrollHeight)
-            ->setGap(theme::TabGap * scale)
-            ->setAxisAlignment(AxisAlignment::Start)
-            ->setCrossAxisAlignment(AxisAlignment::Center)
-    );
-
+    // Desktop navigation is fixed to the Figma 16:9 coordinates. The sidebar
+    // has only five tabs, so it does not need a nested scroll container.
     float const buttonWidth = theme::TabWidth * scale;
     float const buttonHeight = theme::TabHeight * scale;
-    auto tabHitMenu = ui::menuOn(content, 20);
-    m_tabMenu = tabHitMenu;
+    float const buttonCenterX = 118.f * scale;
 
     for (int i = 0; i < static_cast<int>(tabs.size()); ++i) {
         auto item = ui::roundedRect(
@@ -416,13 +390,16 @@ void ModMenu::createTabBar() {
         if (!item)
             continue;
 
-        item->setContentSize({buttonWidth, buttonHeight});
-
-        auto caption = ui::label(tabs[i].label, 0.78f * scale);
+        auto caption = ui::label(tabs[i].label, 0.62f * scale);
         if (caption) {
             caption->setTag(TabLabelTag);
             caption->setAnchorPoint({0.f, 0.5f});
             caption->setPosition({15.f * scale, buttonHeight / 2.f});
+            caption->limitLabelWidth(
+                buttonWidth - 24.f * scale,
+                0.62f * scale,
+                0.34f * scale
+            );
             item->addChild(caption);
         }
 
@@ -437,12 +414,13 @@ void ModMenu::createTabBar() {
         ui::disablePressAnim(button);
         button->setTag(i);
         button->setContentSize({buttonWidth, buttonHeight});
-        content->addChild(button);
+        button->setPosition({
+            buttonCenterX,
+            m_size.height - (179.f + i * 55.f) * scale
+        });
+        m_tabMenu->addChild(button);
     }
-
-    content->updateLayout();
-    scroll->scrollToTop();
-}
+}}
 
 void ModMenu::createContentPanel() {
     bool const compact = overlay::isCompact();
@@ -511,7 +489,41 @@ void ModMenu::fillContent() {
         m_contentPanel->addChild(subtitle, 8);
     }
 
-    float const headerReserve = compact ? 62.f * scale : 86.f * scale;
+    auto features = catalog::featuresFor(catalog::tabAt(m_currentTab));
+
+    if (!compact) {
+        // Match the desktop frame directly: 430x138 cards with 24px column
+        // spacing and the 196px / 352px top offsets from the Figma file.
+        float const cardWidth = theme::CardWidth * scale;
+        float const cardHeight = theme::CardHeight * scale;
+        float const firstRowY = 415.f * scale;
+        float const secondRowY = 259.f * scale;
+        float const leftCenterX = 241.f * scale;
+        float const rightCenterX = 695.f * scale;
+
+        for (int i = 0; i < static_cast<int>(features.size()); ++i) {
+            int const row = i / 2;
+            int const column = i % 2;
+            float const centerX = column == 0 ? leftCenterX : rightCenterX;
+            float const centerY = row == 0
+                ? firstRowY
+                : secondRowY - (row - 1) * 156.f * scale;
+
+            auto card = createFeatureCard(
+                *features[i],
+                {cardWidth, cardHeight}
+            );
+            if (!card)
+                continue;
+
+            card->setPosition({centerX, centerY});
+            m_contentPanel->addChild(card, 4);
+        }
+
+        return;
+    }
+
+    float const headerReserve = 62.f * scale;
     auto const scrollSize = CCSize{
         size.width,
         std::max(80.f, size.height - headerReserve)
@@ -521,16 +533,13 @@ void ModMenu::fillContent() {
     m_contentScroll->setPosition({0.f, 0.f});
     m_contentPanel->addChild(m_contentScroll, 5);
 
-    auto features = catalog::featuresFor(catalog::tabAt(m_currentTab));
-    int const columns = compact ? 1 : 2;
-    float const pad = compact ? 16.f * scale : 26.f * scale;
-    float const gapX = compact ? 12.f * scale : theme::CardGapX * scale;
-    float const gapY = compact ? 12.f * scale : theme::CardGapY * scale;
+    int const columns = 1;
+    float const pad = 16.f * scale;
+    float const gapX = 12.f * scale;
+    float const gapY = 12.f * scale;
     float const usable = std::max(120.f, scrollSize.width - pad * 2.f);
-    float const cardWidth = compact
-        ? usable
-        : theme::CardWidth * scale;
-    float const cardHeight = theme::CardHeight * (compact ? std::min(1.f, scale * 1.05f) : scale);
+    float const cardWidth = usable;
+    float const cardHeight = theme::CardHeight * std::min(1.f, scale * 1.05f);
 
     auto content = m_contentScroll->m_contentLayer;
     content->setLayout(
@@ -578,9 +587,7 @@ void ModMenu::highlightTabs() {
         return;
 
     float const scale = overlay::desktopScale(m_size);
-    float const tabRadius = (overlay::isCompact()
-        ? theme::CompactTabRadius
-        : theme::TabRadius) * scale;
+    float const tabRadius = theme::TabRadius * scale;
 
     for (auto* child : CCArrayExt<CCNode*>(m_tabMenu->getChildren())) {
         auto button = typeinfo_cast<CCMenuItemSpriteExtra*>(child);
