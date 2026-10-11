@@ -3,6 +3,7 @@
 #include <Geode/cocos/draw_nodes/CCDrawNode.h>
 
 #include <algorithm>
+#include <cmath>
 
 namespace mu::ui {
 namespace {
@@ -220,6 +221,88 @@ CCMenuItemSpriteExtra* textButton(
         }
     );
 
+    if (!button)
+        return nullptr;
+
+    disablePressAnim(button);
+    button->setPosition(position);
+    menu->addChild(button);
+    return button;
+}
+
+CCMenuItemSpriteExtra* settingsButton(
+    CCMenu* menu,
+    CCPoint position,
+    CCSize size,
+    std::function<void()> callback
+) {
+    if (!menu || size.width <= 0.f || size.height <= 0.f)
+        return nullptr;
+
+    auto background = roundedRect(
+        theme::Button,
+        size,
+        std::min(size.width, size.height) * 0.27f
+    );
+    if (!background)
+        return nullptr;
+
+    auto drawing = CCDrawNode::create();
+    if (drawing) {
+        float const unit = std::min(size.width, size.height) / 32.f;
+        CCPoint const center = size / 2.f;
+        ccColor4F const iconColor = {
+            theme::Text.r / 255.f,
+            theme::Text.g / 255.f,
+            theme::Text.b / 255.f,
+            1.f
+        };
+        ccColor4F const transparent = {0.f, 0.f, 0.f, 0.f};
+
+        // Minimal line-drawn gear: radial teeth, a clean ring and a center hub.
+        float constexpr pi = 3.14159265f;
+        float constexpr teethInner = 6.2f;
+        float constexpr teethOuter = 9.2f;
+        for (int i = 0; i < 8; ++i) {
+            float const angle = (static_cast<float>(i) / 8.f) * pi * 2.f;
+            CCPoint const from = {
+                center.x + std::cos(angle) * teethInner * unit,
+                center.y + std::sin(angle) * teethInner * unit
+            };
+            CCPoint const to = {
+                center.x + std::cos(angle) * teethOuter * unit,
+                center.y + std::sin(angle) * teethOuter * unit
+            };
+            drawing->drawSegment(from, to, 1.65f * unit, iconColor);
+        }
+
+        drawing->drawCircle(
+            center,
+            5.7f * unit,
+            transparent,
+            1.85f * unit,
+            iconColor,
+            32
+        );
+        drawing->drawCircle(
+            center,
+            2.05f * unit,
+            iconColor,
+            0.f,
+            transparent,
+            24
+        );
+
+        background->addChild(drawing, 2);
+    }
+
+    auto button = CCMenuItemExt::createSpriteExtra(
+        background,
+        [callback = std::move(callback)](CCMenuItemSpriteExtra*) {
+            if (callback)
+                callback();
+        }
+    );
     if (!button)
         return nullptr;
 
