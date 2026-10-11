@@ -52,6 +52,13 @@ CCMenuItemSpriteExtra* textButton(
     ccColor3B textColor = theme::Text
 );
 
+CCMenuItemSpriteExtra* settingsButton(
+    CCMenu* menu,
+    CCPoint position,
+    CCSize size,
+    std::function<void()> callback
+);
+
 CCMenuItemSpriteExtra* pillButton(
     CCMenu* menu,
     char const* text,
