@@ -422,7 +422,7 @@ void ModMenu::createTabBar() {
     }
 }
 
-void ModMenu::createContentPanel {
+void ModMenu::createContentPanel() {
     bool const compact = overlay::isCompact();
     float const scale = overlay::desktopScale(m_size);
 
