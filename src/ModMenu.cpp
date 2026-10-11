@@ -40,16 +40,30 @@ CCNode* createFeatureCard(catalog::FeatureDef const& feature, CCSize size) {
 
     float const pad = 18.f * scale;
 
-    auto title = ui::label(feature.title, 0.54f);
+    auto title = ui::label(feature.title, 0.54f * scale);
     if (title) {
         title->setAnchorPoint({0.f, 0.5f});
         title->setPosition({pad, size.height - 24.f * scale});
         title->limitLabelWidth(
             size.width - pad * 2.f - 88.f * scale,
             title->getScale(),
-            0.38f
+            0.38f * scale
         );
         card->addChild(title, 2);
+
+        // Mark this feature when one or more of its settings differ from the
+        // default, instead of showing a separate RESET button on the card.
+        if (catalog::isDirty(feature)) {
+            auto mark = ui::label("*", 0.46f * scale, theme::Muted);
+            if (mark) {
+                mark->setAnchorPoint({0.f, 0.5f});
+                mark->setPosition({
+                    pad + title->getContentSize().width * title->getScaleX() + 4.f * scale,
+                    size.height - 24.f * scale
+                });
+                card->addChild(mark, 3);
+            }
+        }
     }
 
     auto desc = ui::label(feature.description, 0.38f, theme::Text);
@@ -114,39 +128,18 @@ CCNode* createFeatureCard(catalog::FeatureDef const& feature, CCSize size) {
         }
     }
 
-    if (catalog::isDirty(feature)) {
-        ui::textButton(
-            menu,
-            "RESET",
-            {
-                size.width - pad - pillWidth - 40.f * scale,
-                size.height - 29.f * scale
-            },
-            {58.f * scale, 22.f * scale},
-            [id = std::string(feature.id)]() {
-                for (auto const& item : catalog::features()) {
-                    if (item.id != id)
-                        continue;
-                    catalog::resetFeature(item);
-                    ModMenu::refreshCurrentTab();
-                    return;
-                }
-            }
-        );
-    }
-
     if (feature.hasSettings && feature.openSettings && feature.settingsEnabled) {
-        auto hit = CCLayerColor::create(
-            {0, 0, 0, 0},
-            size.width - pad * 2.f - 100.f * scale,
-            64.f * scale
-        );
-        if (hit) {
-            hit->ignoreAnchorPointForPosition(false);
-            hit->setAnchorPoint({0.5f, 0.5f});
+        // Use Geometry Dash's native options gear so the control looks at home
+        // in-game. Keep its hitbox and image near the card's bottom-right corner.
+        auto gear = CCSprite::createWithSpriteFrameName("GJ_optionsBtn_001.png");
+        if (gear) {
+            auto const spriteSize = gear->getContentSize();
+            float const maxDimension = std::max(spriteSize.width, spriteSize.height);
+            if (maxDimension > 0.f)
+                gear->setScale((20.f * scale) / maxDimension);
 
             auto button = CCMenuItemExt::createSpriteExtra(
-                hit,
+                gear,
                 [open = feature.openSettings](CCMenuItemSpriteExtra*) {
                     if (open)
                         open();
@@ -156,10 +149,10 @@ CCNode* createFeatureCard(catalog::FeatureDef const& feature, CCSize size) {
             if (button) {
                 ui::disablePressAnim(button);
                 button->setPosition({
-                    pad + (size.width - pad * 2.f - 100.f * scale) / 2.f,
-                    size.height - 40.f * scale
+                    size.width - 20.f * scale,
+                    18.f * scale
                 });
-                menu->addChild(button);
+                menu->addChild(button, 15);
             }
         }
     }
