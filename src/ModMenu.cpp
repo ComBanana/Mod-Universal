@@ -473,6 +473,69 @@ void ModMenu::fillContent() {
 
     auto features = catalog::featuresFor(catalog::tabAt(m_currentTab));
 
+    // The desktop Settings tab is a single wide, centered keybind entry,
+    // matching the Desktop [Settings] — 16:9 Figma frame.
+    if (!compact && tab.id == catalog::TabId::Settings) {
+        CCSize const cardSize = {
+            size.width - 40.f * scale,
+            73.f * scale
+        };
+        auto card = ui::roundedRect(
+            theme::Card,
+            cardSize,
+            10.f * scale
+        );
+
+        if (card) {
+            auto title = ui::label("CUSTOMIZE KEYBIND", 0.64f * scale);
+            if (title) {
+                title->setPosition({
+                    cardSize.width / 2.f,
+                    cardSize.height - 21.f * scale
+                });
+                card->addChild(title, 2);
+            }
+
+            auto description = ui::label(
+                "Change or add keybinds to individual mods.",
+                0.39f * scale,
+                theme::Text
+            );
+            if (description) {
+                description->setPosition({
+                    cardSize.width / 2.f,
+                    cardSize.height - 45.f * scale
+                });
+                description->limitLabelWidth(
+                    cardSize.width - 36.f * scale,
+                    description->getScale(),
+                    0.28f * scale
+                );
+                card->addChild(description, 2);
+            }
+
+            auto menu = ui::menuOn(m_contentPanel, 20);
+            if (menu) {
+                auto button = CCMenuItemExt::createSpriteExtra(
+                    card,
+                    [](CCMenuItemSpriteExtra*) {
+                        openSettingsPopup(Mod::get());
+                    }
+                );
+                if (button) {
+                    ui::disablePressAnim(button);
+                    button->setPosition({
+                        size.width / 2.f,
+                        size.height - 85.f * scale - cardSize.height / 2.f
+                    });
+                    menu->addChild(button);
+                }
+            }
+        }
+
+        return;
+    }
+
     if (!compact) {
         // Match the desktop frame directly: 430x138 cards with 24px column
         // spacing and the 196px / 352px top offsets from the Figma file.
