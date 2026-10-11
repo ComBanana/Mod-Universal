@@ -4,6 +4,12 @@
 #include "../../include/ui/Widgets.hpp"
 #include "../../include/ModMenu.hpp"
 
+#include <Geode/ui/Layout.hpp>
+#include <Geode/ui/ScrollLayer.hpp>
+
+#include <algorithm>
+#include <string>
+
 using namespace geode::prelude;
 using namespace mu;
 
@@ -17,22 +23,8 @@ protected:
 
         if (m_bgSprite)
             m_bgSprite->setVisible(false);
-
-        // Hide Geometry Dash's default close sprite and use the same
-        // rounded dark control as the main Mod Universal header.
         if (m_closeBtn)
             m_closeBtn->setVisible(false);
-
-        auto headerMenu = ui::menuOn(m_mainLayer, 30);
-        if (headerMenu) {
-            ui::textButton(
-                headerMenu,
-                "X",
-                {m_size.width - 34.f, m_size.height - 36.f},
-                {30.f, 30.f},
-                [this]() { this->onClosePopup(nullptr); }
-            );
-        }
 
         ui::panel(
             m_mainLayer,
@@ -42,67 +34,88 @@ protected:
             theme::ShellRadius
         )->setZOrder(-100);
 
+        // Compact header and matching close control.
         ui::panel(
             m_mainLayer,
-            {m_size.width / 2.f, m_size.height - 36.f},
-            {m_size.width - 32.f, 52.f},
+            {m_size.width / 2.f, m_size.height - 32.f},
+            {m_size.width - 28.f, 48.f},
             theme::Header,
             theme::HeaderRadius
         );
 
-        auto heading = ui::label(title, m_size.width < 440.f ? 0.56f : 0.64f);
+        auto heading = ui::label(title, m_size.width < 400.f ? 0.56f : 0.64f);
         if (heading) {
             heading->setAnchorPoint({0.f, 0.5f});
-            heading->setPosition({28.f, m_size.height - 28.f});
+            heading->setPosition({22.f, m_size.height - 22.f});
             m_mainLayer->addChild(heading, 8);
         }
 
         if (subtitle) {
             auto sub = ui::mutedLabel(
                 subtitle,
-                m_size.width < 440.f ? 0.27f : 0.31f
+                m_size.width < 400.f ? 0.27f : 0.31f
             );
             if (sub) {
                 sub->setAnchorPoint({0.f, 0.5f});
-                sub->setPosition({28.f, m_size.height - 46.f});
+                sub->setPosition({22.f, m_size.height - 41.f});
                 m_mainLayer->addChild(sub, 8);
             }
+        }
+
+        auto headerMenu = ui::menuOn(m_mainLayer, 30);
+        if (headerMenu) {
+            ui::textButton(
+                headerMenu,
+                "X",
+                {m_size.width - 29.f, m_size.height - 31.f},
+                {26.f, 26.f},
+                [this]() { this->onClosePopup(nullptr); }
+            );
         }
 
         return true;
     }
 
-    void addToggleRow(
-        CCMenu* menu,
+    CCNode* createToggleRow(
+        CCSize rowSize,
         char const* labelText,
-        char const* settingKey,
-        float y
+        char const* settingKey
     ) {
-        auto const rowSize = CCSize{m_size.width - 48.f, 42.f};
-        ui::panel(
-            m_mainLayer,
-            {m_size.width / 2.f, y},
-            rowSize,
+        auto row = CCNode::create();
+        if (!row)
+            return nullptr;
+
+        row->setContentSize(rowSize);
+        row->ignoreAnchorPointForPosition(false);
+        row->setAnchorPoint({0.5f, 0.5f});
+
+        auto background = ui::roundedRect(
             theme::Card,
-            theme::CardRadius
+            rowSize,
+            8.f
         );
+        if (background) {
+            background->setPosition(rowSize / 2.f);
+            row->addChild(background, 0);
+        }
 
         auto caption = ui::label(
             labelText,
-            m_size.width < 440.f ? 0.42f : 0.48f
+            rowSize.width < 360.f ? 0.42f : 0.48f
         );
         if (caption) {
             caption->setAnchorPoint({0.f, 0.5f});
-            caption->setPosition({36.f, y});
-            m_mainLayer->addChild(caption, 6);
+            caption->setPosition({16.f, rowSize.height / 2.f});
+            row->addChild(caption, 6);
         }
 
+        auto menu = ui::menuOn(row, 12);
         bool const enabled = Mod::get()->getSettingValue<bool>(settingKey);
         ui::pillButton(
             menu,
             enabled ? "ON" : "OFF",
-            {m_size.width - 70.f, y},
-            {72.f, 26.f},
+            {rowSize.width - 48.f, rowSize.height / 2.f},
+            {62.f, 22.f},
             [settingKey](CCMenuItemSpriteExtra* item) {
                 bool const next = !Mod::get()->getSettingValue<bool>(settingKey);
                 if (std::string(settingKey) == "noclip-enabled")
@@ -116,6 +129,27 @@ protected:
             },
             enabled
         );
+
+        return row;
+    }
+
+    CCNode* createCategoryRow(CCSize rowSize, char const* labelText) {
+        auto row = CCNode::create();
+        if (!row)
+            return nullptr;
+
+        row->setContentSize(rowSize);
+        row->ignoreAnchorPointForPosition(false);
+        row->setAnchorPoint({0.5f, 0.5f});
+
+        auto caption = ui::label(labelText, 0.42f, theme::Muted);
+        if (caption) {
+            caption->setAnchorPoint({0.f, 0.5f});
+            caption->setPosition({14.f, rowSize.height / 2.f});
+            row->addChild(caption, 2);
+        }
+
+        return row;
     }
 
     void onClosePopup(CCObject*) {
@@ -135,103 +169,34 @@ protected:
     }
 };
 
-class NoclipHazardPopup : public ThemedPopup {
-protected:
-    bool init() {
-        auto const size = overlay::popupSize(
-            560.f,
-            overlay::isCompact() ? 620.f : 430.f
-        );
-
-        if (!setupShell(
-            size,
-            "Spike Phasing",
-            "Choose which hazard categories are ignored by Noclip."
-        )) {
-            return false;
-        }
-
-        auto menu = ui::menuOn(m_mainLayer);
-        float const top = m_size.height - 96.f;
-        float const gap = std::min(48.f, std::max(40.f, (top - 70.f) / 5.f));
-
-        addToggleRow(menu, "Spikes", "noclip-hazard-spikes", top);
-        addToggleRow(menu, "Ground / Edge Spikes", "noclip-hazard-ground-spikes", top - gap);
-        addToggleRow(menu, "Sawblades", "noclip-hazard-saws", top - gap * 2.f);
-        addToggleRow(menu, "Pits", "noclip-hazard-pits", top - gap * 3.f);
-        addToggleRow(menu, "Animated Hazards", "noclip-hazard-animated", top - gap * 4.f);
-        addToggleRow(menu, "Other Hazards", "noclip-hazard-other", top - gap * 5.f);
-
-        ui::textButton(
-            menu,
-            "Back",
-            {m_size.width / 2.f, 28.f},
-            {126.f, 34.f},
-            [this]() { this->onClosePopup(nullptr); }
-        );
-
-        return true;
-    }
-
-public:
-    static NoclipHazardPopup* create() {
-        auto ret = new NoclipHazardPopup();
-        if (ret && ret->init()) {
-            ret->autorelease();
-            return ret;
-        }
-
-        delete ret;
-        return nullptr;
-    }
-
-    void present() {
-        showAndRegister();
-    }
-};
-
 class NoclipSettingsPopup : public ThemedPopup {
 protected:
     CCLayerColor* m_blockModeBackground = nullptr;
     CCLabelBMFont* m_blockModeLabel = nullptr;
 
-    bool init() {
-        auto const size = overlay::popupSize(
-            560.f,
-            overlay::isCompact() ? 620.f : 450.f
-        );
+    CCNode* createBlockModeRow(CCSize rowSize) {
+        auto row = CCNode::create();
+        if (!row)
+            return nullptr;
 
-        if (!setupShell(
-            size,
-            "Noclip",
-            "Control how Noclip interacts with the level."
-        )) {
-            return false;
+        row->setContentSize(rowSize);
+        row->ignoreAnchorPointForPosition(false);
+        row->setAnchorPoint({0.5f, 0.5f});
+
+        auto background = ui::roundedRect(theme::Card, rowSize, 8.f);
+        if (background) {
+            background->setPosition(rowSize / 2.f);
+            row->addChild(background, 0);
         }
 
-        auto menu = ui::menuOn(m_mainLayer);
-        float const top = m_size.height - 102.f;
-
-        addToggleRow(menu, "Block Phasing", "noclip-phase-blocks", top);
-        addToggleRow(menu, "Slope Phasing", "noclip-phase-slopes", top - 50.f);
-        addToggleRow(menu, "Spike Phasing", "noclip-phase-hazards", top - 100.f);
-
-        ui::panel(
-            m_mainLayer,
-            {m_size.width / 2.f, top - 150.f},
-            {m_size.width - 48.f, 42.f},
-            theme::Card,
-            theme::CardRadius
-        );
-
-        auto collisionLabel = ui::label(
+        auto caption = ui::label(
             "Block Collision",
-            m_size.width < 440.f ? 0.42f : 0.48f
+            rowSize.width < 360.f ? 0.42f : 0.48f
         );
-        if (collisionLabel) {
-            collisionLabel->setAnchorPoint({0.f, 0.5f});
-            collisionLabel->setPosition({36.f, top - 150.f});
-            m_mainLayer->addChild(collisionLabel, 6);
+        if (caption) {
+            caption->setAnchorPoint({0.f, 0.5f});
+            caption->setPosition({16.f, rowSize.height / 2.f});
+            row->addChild(caption, 6);
         }
 
         bool const noTouch =
@@ -239,8 +204,8 @@ protected:
 
         m_blockModeBackground = ui::roundedRect(
             noTouch ? theme::StatusOn : theme::Button,
-            {132.f, 26.f},
-            13.f
+            {108.f, 22.f},
+            11.f
         );
 
         if (m_blockModeBackground) {
@@ -251,10 +216,11 @@ protected:
             );
 
             if (m_blockModeLabel) {
-                m_blockModeLabel->setPosition({66.f, 13.f});
+                m_blockModeLabel->setPosition({54.f, 11.f});
                 m_blockModeBackground->addChild(m_blockModeLabel);
             }
 
+            auto menu = ui::menuOn(row, 12);
             auto modeButton = CCMenuItemExt::createSpriteExtra(
                 m_blockModeBackground,
                 [this](CCMenuItemSpriteExtra*) {
@@ -264,39 +230,89 @@ protected:
 
             if (modeButton) {
                 ui::disablePressAnim(modeButton);
-                modeButton->setPosition({m_size.width - 96.f, top - 150.f});
+                modeButton->setPosition({
+                    rowSize.width - 66.f,
+                    rowSize.height / 2.f
+                });
                 menu->addChild(modeButton);
             }
         }
 
-        auto hazard = ui::textButton(
-            menu,
-            "Configure Hazards",
-            {m_size.width / 2.f, top - 210.f},
-            {190.f, 34.f},
-            [this]() { this->onHazardSettings(); },
-            theme::Button,
-            theme::Muted
+        return row;
+    }
+
+    bool init() {
+        bool const compact = overlay::isCompact();
+        auto const size = overlay::popupSize(
+            compact ? 360.f : 460.f,
+            compact ? 460.f : 350.f
         );
 
-        auto info = ui::mutedLabel(
-            "Choose which hazard categories Noclip can ignore.",
-            0.29f
-        );
-        if (info) {
-            info->setAnchorPoint({0.5f, 0.5f});
-            info->setPosition({m_size.width / 2.f, top - 242.f});
-            m_mainLayer->addChild(info);
+        if (!setupShell(
+            size,
+            "Noclip",
+            "Control how Noclip interacts with the level."
+        )) {
+            return false;
         }
 
-        ui::textButton(
-            menu,
-            "Back",
-            {m_size.width / 2.f, 28.f},
-            {126.f, 34.f},
-            [this]() { this->onClosePopup(nullptr); }
+        // All controls live in one scrollable list. Hazard-specific toggles
+        // remain in this list under their own category instead of a second popup.
+        CCSize const scrollSize = {
+            m_size.width - 32.f,
+            m_size.height - 84.f
+        };
+
+        auto scroll = ScrollLayer::create(scrollSize, true, true);
+        if (!scroll)
+            return false;
+
+        scroll->setPosition({16.f, 14.f});
+        m_mainLayer->addChild(scroll, 5);
+
+        auto content = scroll->m_contentLayer;
+        content->setLayout(
+            ColumnLayout::create()
+                ->setAxisReverse(true)
+                ->setAutoGrowAxis(scrollSize.height)
+                ->setGap(6.f)
+                ->setAxisAlignment(AxisAlignment::Start)
+                ->setCrossAxisAlignment(AxisAlignment::Center)
         );
 
+        CCSize const rowSize = {
+            scrollSize.width - 8.f,
+            32.f
+        };
+
+        auto addToggle = [&](char const* labelText, char const* settingKey) {
+            if (auto row = createToggleRow(rowSize, labelText, settingKey))
+                content->addChild(row);
+        };
+
+        addToggle("Block Phasing", "noclip-phase-blocks");
+        addToggle("Slope Phasing", "noclip-phase-slopes");
+        addToggle("Spike Phasing", "noclip-phase-hazards");
+
+        if (auto row = createBlockModeRow(rowSize))
+            content->addChild(row);
+
+        if (auto category = createCategoryRow(
+            {rowSize.width, 22.f},
+            "HAZARD CATEGORIES"
+        )) {
+            content->addChild(category);
+        }
+
+        addToggle("Spikes", "noclip-hazard-spikes");
+        addToggle("Ground / Edge Spikes", "noclip-hazard-ground-spikes");
+        addToggle("Sawblades", "noclip-hazard-saws");
+        addToggle("Pits", "noclip-hazard-pits");
+        addToggle("Animated Hazards", "noclip-hazard-animated");
+        addToggle("Other Hazards", "noclip-hazard-other");
+
+        content->updateLayout();
+        scroll->scrollToTop();
         return true;
     }
 
@@ -310,18 +326,13 @@ protected:
         ui::setRoundedRectColor(
             m_blockModeBackground,
             noTouch ? theme::StatusOn : theme::Button,
-            13.f
+            11.f
         );
 
         if (m_blockModeLabel)
             m_blockModeLabel->setString(noTouch ? "No Hitbox" : "Standard");
 
         ModMenu::refreshCurrentTab();
-    }
-
-    void onHazardSettings() {
-        if (auto popup = NoclipHazardPopup::create())
-            popup->present();
     }
 
 public:
@@ -350,9 +361,10 @@ void openNoclipSettings() {
         popup->present();
 }
 
+// Kept for compatibility with existing callers; hazard options now live in
+// the main scrollable Noclip settings panel.
 void openNoclipHazardSettings() {
-    if (auto popup = NoclipHazardPopup::create())
-        popup->present();
+    openNoclipSettings();
 }
 
 } // namespace mu::ui
