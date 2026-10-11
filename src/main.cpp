@@ -33,8 +33,8 @@ $on_mod(Loaded) {
                 return;
             }
 
-            // F3 is the ModUniversal menu's back/open key. ModMenu::toggle()
-            // closes the deepest nested popup first, then the main menu.
+            // Use the user's configured menu keybind. ModMenu::toggle() closes the
+            // deepest nested popup first, then the main menu.
             saveNoclipSettings();
             ModMenu::toggle();
         }
