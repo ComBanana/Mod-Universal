@@ -40,21 +40,21 @@ CCNode* createFeatureCard(catalog::FeatureDef const& feature, CCSize size) {
 
     float const pad = 18.f * scale;
 
-    auto title = ui::label(feature.title, 0.54f * scale);
+    auto title = ui::label(feature.title, 0.82f * scale);
     if (title) {
         title->setAnchorPoint({0.f, 0.5f});
         title->setPosition({pad, size.height - 24.f * scale});
         title->limitLabelWidth(
             size.width - pad * 2.f - 88.f * scale,
             title->getScale(),
-            0.38f * scale
+            0.56f * scale
         );
         card->addChild(title, 2);
 
         // Mark this feature when one or more of its settings differ from the
         // default, instead of showing a separate RESET button on the card.
         if (catalog::isDirty(feature)) {
-            auto mark = ui::label("*", 0.46f * scale, theme::Muted);
+            auto mark = ui::label("*", 0.62f * scale, theme::Muted);
             if (mark) {
                 mark->setAnchorPoint({0.f, 0.5f});
                 mark->setPosition({
@@ -347,7 +347,7 @@ void ModMenu::createTabBar() {
         theme::PanelRadius * scale
     );
 
-    auto modules = ui::label("MODULES", 0.50f * scale);
+    auto modules = ui::label("MODULES", 0.62f * scale);
     if (modules) {
         modules->setAnchorPoint({0.f, 0.5f});
         modules->setPosition({
@@ -372,15 +372,15 @@ void ModMenu::createTabBar() {
         if (!item)
             continue;
 
-        auto caption = ui::label(tabs[i].label, 0.62f * scale);
+        auto caption = ui::label(tabs[i].label, 0.74f * scale);
         if (caption) {
             caption->setTag(TabLabelTag);
             caption->setAnchorPoint({0.f, 0.5f});
             caption->setPosition({15.f * scale, buttonHeight / 2.f});
             caption->limitLabelWidth(
                 buttonWidth - 24.f * scale,
-                0.62f * scale,
-                0.34f * scale
+                0.74f * scale,
+                0.42f * scale
             );
             item->addChild(caption);
         }
