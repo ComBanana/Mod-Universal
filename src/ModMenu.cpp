@@ -7,413 +7,6 @@
 
 #include <Geode/loader/Mod.hpp>
 #include <Geode/modify/PlayLayer.hpp>
-<<<<<<< Updated upstream
-
-#include <algorithm>
-#include <filesystem>
-#include <functional>
-#include <vector>
-
-namespace {
-
-std::vector<std::string> const NoclipSettingKeys = {
-    "noclip-enabled",
-    "noclip-phase-blocks",
-    "noclip-block-mode",
-    "noclip-phase-slopes",
-    "noclip-phase-hazards",
-    "noclip-hazard-spikes",
-    "noclip-hazard-ground-spikes",
-    "noclip-hazard-saws",
-    "noclip-hazard-pits",
-    "noclip-hazard-animated",
-    "noclip-hazard-other",
-};
-
-void ensureSettingsFile() {
-    auto const path = Mod::get()->getSaveDir() / "settings.json";
-    std::error_code ec;
-
-    if (std::filesystem::exists(path, ec))
-        return;
-
-    if (ec) {
-        log::error(
-            "Failed to check settings file: {}",
-            ec.message()
-        );
-        return;
-    }
-
-    if (auto result = Mod::get()->saveData(); !result) {
-        log::error(
-            "Failed to create default settings file: {}",
-            result.unwrapErr()
-        );
-    }
-}
-
-bool areSettingsAtDefault(std::vector<std::string> const& keys) {
-    for (auto const& key : keys) {
-        if (auto setting = Mod::get()->getSetting(key);
-            setting && !setting->isDefaultValue()) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-void resetSettingsToDefault(std::vector<std::string> const& keys) {
-    for (auto const& key : keys) {
-        if (auto setting = Mod::get()->getSetting(key))
-            setting->reset();
-        else
-            log::warn("Could not find setting '{}'", key);
-    }
-
-    if (auto result = Mod::get()->saveData(); !result) {
-        log::error(
-            "Failed to save reset settings: {}",
-            result.unwrapErr()
-        );
-    }
-}
-
-CCMenuItemSpriteExtra* createHackDefaultButton(
-    CCMenu* menu,
-    std::vector<std::string> settingKeys,
-    CCPoint position
-) {
-    if (!menu || settingKeys.empty())
-        return nullptr;
-
-    auto sprite = CCSprite::createWithSpriteFrameName(
-        "GJ_undoBtn_001.png"
-    );
-
-    if (!sprite)
-        return nullptr;
-
-    sprite->setScale(0.8f);
-
-    auto const showButton = !areSettingsAtDefault(settingKeys);
-
-    auto button = CCMenuItemExt::createSpriteExtra(
-        sprite,
-        [keys = std::move(settingKeys)](CCMenuItemSpriteExtra*) {
-            resetSettingsToDefault(keys);
-            ModMenu::refreshCurrentTab();
-        }
-    );
-
-    if (!button)
-        return nullptr;
-
-    button->setPosition(position);
-    button->setVisible(showButton);
-    menu->addChild(button);
-    return button;
-}
-
-WeakRef<CCMenuItemSpriteExtra> s_noclipDefaultButton;
-WeakRef<CCMenuItemSpriteExtra> s_noclipSettingsButton;
-WeakRef<CCMenuItemSpriteExtra> s_noclipCheckboxButton;
-
-void updateNoclipRowLayout() {
-    bool const hasNoclipChanges = !areSettingsAtDefault(NoclipSettingKeys);
-
-    if (auto button = s_noclipDefaultButton.lock())
-        button->setVisible(hasNoclipChanges);
-
-    if (auto button = s_noclipSettingsButton.lock()) {
-        button->setPosition({
-            hasNoclipChanges ? 235.f : 275.f,
-            62.f
-        });
-    }
-
-    if (auto button = s_noclipCheckboxButton.lock()) {
-        button->setPosition({330.f, 62.f});
-    }
-}
-
-void updateNoclipDefaultButton() {
-    updateNoclipRowLayout();
-}
-
-CCLabelBMFont* createMenuLabel(char const* text, float scale = 0.45f) {
-    auto label = CCLabelBMFont::create(text, "goldFont.fnt");
-    label->setScale(scale);
-    return label;
-}
-
-CCSprite* createNoclipCheckboxSprite(bool enabled, float scale = 0.8f) {
-    auto sprite = CCSprite::createWithSpriteFrameName(
-        enabled
-            ? "GJ_checkOn_001.png"
-            : "GJ_checkOff_001.png"
-    );
-
-    if (sprite)
-        sprite->setScale(scale);
-
-    return sprite;
-}
-
-void saveNoclipButtonSettings() {
-    if (auto result = Mod::get()->saveData(); !result) {
-        log::error(
-            "Failed to save Noclip button settings: {}",
-            result.unwrapErr()
-        );
-    }
-}
-
-void refreshNoclipCheckbox(
-    CCMenuItemSpriteExtra* button,
-    bool enabled
-) {
-    if (!button)
-        return;
-
-    auto sprite = typeinfo_cast<CCSprite*>(button->getNormalImage());
-
-    if (!sprite) {
-        log::error("Failed to find Noclip checkbox sprite");
-        return;
-    }
-
-    // Do not replace the menu item's normal image here. Cocos2d's
-    // setNormalImage() resets the replacement sprite's anchor point and
-    // content geometry, which makes the button visibly jump after a click.
-    // Changing the existing sprite frame keeps its position, anchor and
-    // scale intact.
-    auto frame = CCSpriteFrameCache::sharedSpriteFrameCache()->spriteFrameByName(
-        enabled
-            ? "GJ_checkOn_001.png"
-            : "GJ_checkOff_001.png"
-    );
-
-    if (!frame) {
-        log::error("Failed to find Noclip checkbox frame");
-        return;
-    }
-
-    sprite->setDisplayFrame(frame);
-}
-
-CCMenuItemSpriteExtra* createNoclipCheckbox(
-    CCNode* parent,
-    char const* settingKey,
-    CCPoint position
-) {
-    if (!parent || !settingKey)
-        return nullptr;
-
-    auto const key = std::string(settingKey);
-    auto initialState = Mod::get()->getSettingValue<bool>(key);
-
-    auto sprite = createNoclipCheckboxSprite(initialState);
-
-    if (!sprite)
-        return nullptr;
-
-    auto button = CCMenuItemExt::createSpriteExtra(
-        sprite,
-        [key](CCMenuItemSpriteExtra* item) {
-            auto* mod = Mod::get();
-
-            auto current = mod->getSettingValue<bool>(key);
-            auto next = !current;
-
-            if (key == "noclip-enabled") {
-                // Route the main Noclip control through the same ModMenu API
-                // used by the gameplay code rather than treating it as a
-                // generic UI-only boolean.
-                ModMenu::setNoclipEnabled(next);
-            }
-            else {
-                mod->setSettingValue<bool>(key, next);
-            }
-
-            refreshNoclipCheckbox(item, next);
-            saveNoclipButtonSettings();
-            updateNoclipDefaultButton();
-
-            log::info(
-                "Noclip setting '{}' changed to {}",
-                key,
-                next ? "ON" : "OFF"
-            );
-        }
-    );
-
-    if (!button)
-        return nullptr;
-
-    button->setPosition(position);
-    parent->addChild(button);
-    return button;
-}
-
-struct NestedPopupEntry {
-    WeakRef<Popup> popup;
-    std::function<void()> close;
-};
-
-std::vector<NestedPopupEntry> s_nestedPopups;
-
-void registerNestedPopup(Popup* popup, std::function<void()> close) {
-    if (!popup)
-        return;
-
-    s_nestedPopups.erase(
-        std::remove_if(
-            s_nestedPopups.begin(),
-            s_nestedPopups.end(),
-            [popup](NestedPopupEntry const& entry) {
-                return entry.popup == popup;
-            }
-        ),
-        s_nestedPopups.end()
-    );
-
-    s_nestedPopups.push_back({
-        popup,
-        std::move(close),
-    });
-}
-
-void unregisterNestedPopup(Popup* popup) {
-    s_nestedPopups.erase(
-        std::remove_if(
-            s_nestedPopups.begin(),
-            s_nestedPopups.end(),
-            [popup](NestedPopupEntry const& entry) {
-                return entry.popup == popup;
-            }
-        ),
-        s_nestedPopups.end()
-    );
-}
-
-bool closeTopNestedPopup() {
-    while (!s_nestedPopups.empty()) {
-        auto entry = std::move(s_nestedPopups.back());
-        s_nestedPopups.pop_back();
-
-        // The popup may already have been destroyed by its own close path.
-        // WeakRef::lock() safely returns null instead of dereferencing freed
-        // memory.
-        auto popup = entry.popup.lock();
-
-        if (!popup || !popup->getParent())
-            continue;
-
-        if (entry.close)
-            entry.close();
-
-        return true;
-    }
-
-    return false;
-}
-
-void closeAllNestedPopups() {
-    while (closeTopNestedPopup()) {
-    }
-}
-
-void saveMenuSettings() {
-    if (auto result = Mod::get()->saveData(); !result) {
-        log::error("Failed to save ModUniversal settings: {}", result.unwrapErr());
-    }
-}
-
-class NoclipHazardPopup : public Popup {
-protected:
-    bool init() {
-        if (!Popup::init(430.f, 300.f))
-            return false;
-
-        auto title = createMenuLabel("Hazard Phasing", 0.6f);
-        title->setPosition({m_size.width / 2.f, m_size.height - 30.f});
-        m_mainLayer->addChild(title);
-
-        auto subtitle = createMenuLabel("Choose which hazard categories noclip ignores.", 0.32f);
-        subtitle->setPosition({m_size.width / 2.f, m_size.height - 52.f});
-        subtitle->setOpacity(190);
-        m_mainLayer->addChild(subtitle);
-
-        auto menu = CCMenu::create();
-        menu->setPosition({0.f, 0.f});
-        m_mainLayer->addChild(menu);
-
-        addToggleRow(menu, "Spikes", "noclip-hazard-spikes", 225.f);
-        addToggleRow(menu, "Ground / Edge Spikes", "noclip-hazard-ground-spikes", 192.f);
-        addToggleRow(menu, "Sawblades", "noclip-hazard-saws", 159.f);
-        addToggleRow(menu, "Pits", "noclip-hazard-pits", 126.f);
-        addToggleRow(menu, "Animated Hazards", "noclip-hazard-animated", 93.f);
-        addToggleRow(menu, "Other Hazards", "noclip-hazard-other", 60.f);
-
-        auto closeSprite = ButtonSprite::create(
-            "Back",
-            "goldFont.fnt",
-            "GJ_button_01.png",
-            0.7f
-        );
-
-        auto closeButton = CCMenuItemSpriteExtra::create(
-            closeSprite,
-            this,
-            menu_selector(NoclipHazardPopup::onClosePopup)
-        );
-
-        closeButton->setPosition({m_size.width / 2.f, 27.f});
-        menu->addChild(closeButton);
-
-        return true;
-    }
-
-    void addToggleRow(
-        CCMenu* menu,
-        char const* labelText,
-        char const* settingKey,
-        float y
-    ) {
-        auto label = createMenuLabel(labelText, 0.42f);
-        label->setAnchorPoint({0.f, 0.5f});
-        label->setPosition({65.f, y});
-        m_mainLayer->addChild(label);
-
-        auto toggle = createNoclipCheckbox(
-            menu,
-            settingKey,
-            {345.f, y}
-        );
-
-        if (!toggle)
-            log::warn("Could not create noclip hazard checkbox for {}", settingKey);
-    }
-
-    void onClosePopup(CCObject*) {
-        unregisterNestedPopup(this);
-        this->onClose(nullptr);
-    }
-
-    void keyBackClicked() override {
-        onClosePopup(nullptr);
-    }
-
-public:
-    void showAndRegister() {
-        this->show();
-        registerNestedPopup(
-            this,
-            [this]() {
-                this->onClosePopup(nullptr);
-=======
 #include <Geode/ui/Layout.hpp>
 #include <Geode/ui/ScrollLayer.hpp>
 #include <Geode/ui/Scrollbar.hpp>
@@ -527,198 +120,10 @@ CCNode* createFeatureCard(catalog::FeatureDef const& feature, CCSize size) {
                     ModMenu::refreshCurrentTab();
                     return;
                 }
->>>>>>> Stashed changes
             }
         );
     }
 
-<<<<<<< Updated upstream
-    static NoclipHazardPopup* create() {
-        auto ret = new NoclipHazardPopup();
-
-        if (ret && ret->init()) {
-            ret->autorelease();
-            return ret;
-        }
-
-        delete ret;
-        return nullptr;
-    }
-};
-
-class NoclipSettingsPopup : public Popup {
-protected:
-    ButtonSprite* m_blockModeButton = nullptr;
-
-    bool init() {
-        if (!Popup::init(440.f, 285.f))
-            return false;
-
-        auto title = createMenuLabel("Noclip Settings", 0.62f);
-        title->setPosition({m_size.width / 2.f, m_size.height - 30.f});
-        m_mainLayer->addChild(title);
-
-        auto menu = CCMenu::create();
-        menu->setPosition({0.f, 0.f});
-        m_mainLayer->addChild(menu);
-
-        addToggleRow(menu, "Block Phasing", "noclip-phase-blocks", 220.f);
-        addToggleRow(menu, "Slope Phasing", "noclip-phase-slopes", 188.f);
-        addToggleRow(menu, "Spike Phasing", "noclip-phase-hazards", 156.f);
-
-        auto modeLabel = createMenuLabel("Block Collision Mode", 0.42f);
-        modeLabel->setAnchorPoint({0.f, 0.5f});
-        modeLabel->setPosition({55.f, 119.f});
-        m_mainLayer->addChild(modeLabel);
-
-        m_blockModeButton = createBlockModeButton();
-        auto modeButton = CCMenuItemSpriteExtra::create(
-            m_blockModeButton,
-            this,
-            menu_selector(NoclipSettingsPopup::onBlockMode)
-        );
-        modeButton->setPosition({300.f, 119.f});
-        menu->addChild(modeButton);
-
-        auto hazardButtonSprite = ButtonSprite::create(
-            "Configure Hazards",
-            "goldFont.fnt",
-            "GJ_button_01.png",
-            0.62f
-        );
-        auto hazardButton = CCMenuItemSpriteExtra::create(
-            hazardButtonSprite,
-            this,
-            menu_selector(NoclipSettingsPopup::onHazardSettings)
-        );
-
-        // Temporarily disabled while the hazard configuration system is being
-        // reworked. Keep the button visible but gray.
-        hazardButtonSprite->setColor({120, 120, 120});
-        hazardButton->setEnabled(false);
-        hazardButton->setPosition({m_size.width / 2.f, 78.f});
-        menu->addChild(hazardButton);
-
-        auto info = createMenuLabel(
-            "Configure which hazard types noclip ignores.",
-            0.3f
-        );
-        info->setPosition({m_size.width / 2.f, 51.f});
-        info->setOpacity(180);
-        m_mainLayer->addChild(info);
-
-        auto closeSprite = ButtonSprite::create(
-            "Back",
-            "goldFont.fnt",
-            "GJ_button_01.png",
-            0.7f
-        );
-
-        auto closeButton = CCMenuItemSpriteExtra::create(
-            closeSprite,
-            this,
-            menu_selector(NoclipSettingsPopup::onClosePopup)
-        );
-        closeButton->setPosition({m_size.width / 2.f, 25.f});
-        menu->addChild(closeButton);
-
-        return true;
-    }
-
-    CCMenuItemSpriteExtra* addToggleRow(
-        CCMenu* menu,
-        char const* labelText,
-        char const* settingKey,
-        float y
-    ) {
-        auto label = createMenuLabel(labelText, 0.44f);
-        label->setAnchorPoint({0.f, 0.5f});
-        label->setPosition({55.f, y});
-        m_mainLayer->addChild(label);
-
-        auto toggle = createNoclipCheckbox(
-            menu,
-            settingKey,
-            {370.f, y}
-        );
-
-        if (!toggle)
-            log::warn("Could not create noclip checkbox for {}", settingKey);
-
-        return toggle;
-    }
-
-    ButtonSprite* createBlockModeButton() {
-        auto mode = Mod::get()->getSettingValue<std::string>("noclip-block-mode");
-        auto text = mode == "no-touch"
-            ? "No Hitbox"
-            : "Standard";
-
-        return ButtonSprite::create(
-            text,
-            "goldFont.fnt",
-            "GJ_button_01.png",
-            0.54f
-        );
-    }
-
-    void onBlockMode(CCObject*) {
-        auto current = Mod::get()->getSettingValue<std::string>("noclip-block-mode");
-        auto next = current == "no-touch"
-            ? "safe-touch"
-            : "no-touch";
-
-        Mod::get()->setSettingValue<std::string>("noclip-block-mode", next);
-
-        if (m_blockModeButton) {
-            m_blockModeButton->setString(
-                next == "no-touch"
-                    ? "No Hitbox"
-                    : "Standard"
-            );
-        }
-
-        updateNoclipDefaultButton();
-    }
-
-    void onHazardSettings(CCObject*) {
-        if (auto popup = NoclipHazardPopup::create())
-            popup->showAndRegister();
-    }
-
-    void onClosePopup(CCObject*) {
-        unregisterNestedPopup(this);
-        this->onClose(nullptr);
-    }
-
-    void keyBackClicked() override {
-        onClosePopup(nullptr);
-    }
-
-public:
-    void showAndRegister() {
-        this->show();
-        registerNestedPopup(
-            this,
-            [this]() {
-                this->onClosePopup(nullptr);
-            }
-        );
-    }
-
-    static NoclipSettingsPopup* create() {
-        auto ret = new NoclipSettingsPopup();
-
-        if (ret && ret->init()) {
-            ret->autorelease();
-            return ret;
-        }
-
-        delete ret;
-        return nullptr;
-    }
-};
-=======
     if (feature.hasSettings && feature.openSettings && feature.settingsEnabled) {
         auto hit = CCLayerColor::create(
             {0, 0, 0, 0},
@@ -750,39 +155,12 @@ public:
 
     return card;
 }
->>>>>>> Stashed changes
 
 } // namespace
 
 bool ModMenu::init() {
     overlay::ensureSettingsFile();
 
-<<<<<<< Updated upstream
-    if (!Popup::init(460.f, 235.f))
-        return false;
-
-    createHeader();
-    createTabBar();
-    createContentPanel();
-
-    auto resetSprite = ButtonSprite::create(
-        "Set to Default",
-        "goldFont.fnt",
-        "GJ_button_01.png",
-        0.5f
-    );
-
-    if (resetSprite) {
-        auto resetButton = CCMenuItemSpriteExtra::create(
-            resetSprite,
-            this,
-            menu_selector(ModMenu::onSetAllToDefault)
-        );
-        resetButton->setPosition({m_size.width - 70.f, 15.f});
-        m_mainLayer->addChild(resetButton);
-    }
-
-=======
     float const aspect = overlay::windowAspect();
     auto const popupSize = overlay::popupSize(
         aspect < 0.95f ? theme::CompactWidth : aspect < 1.45f ? 960.f : theme::DesktopWidth,
@@ -807,78 +185,10 @@ bool ModMenu::init() {
     createHeader();
     createTabBar();
     createContentPanel();
->>>>>>> Stashed changes
     return true;
 }
 
 void ModMenu::createHeader() {
-<<<<<<< Updated upstream
-    auto logo = CCSprite::create("PopupTitle.png"_spr);
-
-    if (!logo) {
-        log::error("Failed to load PopupTitle.png");
-        return;
-    }
-
-    logo->setAnchorPoint({0.5f, 1.f});
-
-    float desiredWidth = m_size.width * 0.65f;
-    float scale = desiredWidth / logo->getContentSize().width;
-    logo->setScale(scale);
-
-    float overlap = logo->getScaledContentSize().height * 0.5f;
-
-    logo->setPosition({
-        m_size.width / 2.f,
-        m_size.height + overlap
-    });
-
-    m_mainLayer->addChild(logo, 100);
-}
-
-void ModMenu::createTabBar() {
-    auto strip = extension::CCScale9Sprite::create("square02_small.png");
-
-    strip->setContentSize({
-        m_size.width - 24.f,
-        42.f
-    });
-
-    strip->setColor({55, 55, 55});
-    strip->setOpacity(210);
-    strip->setPosition({
-        m_size.width / 2.f,
-        m_size.height - 48.f
-    });
-
-    m_mainLayer->addChild(strip);
-
-    auto menu = CCMenu::create();
-    menu->setPosition({0, 0});
-    m_mainLayer->addChild(menu);
-
-    constexpr const char* tabs[] = {
-        "Player",
-        "Visuals",
-        "Creator",
-        "Misc",
-        "Settings"
-    };
-
-    float x = 32.f;
-    float y = strip->getPositionY();
-    constexpr float gap = 10.f;
-
-    for (int i = 0; i < 5; i++) {
-        auto spr = ButtonSprite::create(
-            tabs[i],
-            "goldFont.fnt",
-            "GJ_button_04.png",
-            0.55f
-        );
-
-        spr->setScale(.72f);
-=======
     bool const compact = overlay::isCompact();
     float const scale = overlay::desktopScale(m_size);
 
@@ -1085,27 +395,12 @@ void ModMenu::createTabBar() {
             caption->setPosition({15.f * scale, buttonHeight / 2.f});
             item->addChild(caption);
         }
->>>>>>> Stashed changes
 
-        auto btn = CCMenuItemSpriteExtra::create(
-            spr,
+        auto button = CCMenuItemSpriteExtra::create(
+            item,
             this,
             menu_selector(ModMenu::onTab)
         );
-<<<<<<< Updated upstream
-
-        btn->setTag(i);
-        btn->setPosition({
-            x + spr->getScaledContentSize().width / 2.f,
-            y
-        });
-
-        if (i == 0)
-            spr->setColor({120, 255, 120});
-
-        menu->addChild(btn);
-        x += spr->getScaledContentSize().width + gap;
-=======
         if (!button)
             continue;
 
@@ -1113,7 +408,6 @@ void ModMenu::createTabBar() {
         button->setTag(i);
         button->setContentSize({buttonWidth, buttonHeight});
         content->addChild(button);
->>>>>>> Stashed changes
     }
 
     content->updateLayout();
@@ -1121,22 +415,6 @@ void ModMenu::createTabBar() {
 }
 
 void ModMenu::createContentPanel() {
-<<<<<<< Updated upstream
-    m_contentPanel = CCNode::create();
-
-    m_contentPanel->setContentSize({
-        m_size.width - 40.f,
-        125.f
-    });
-
-    m_contentPanel->setPosition({
-        20.f,
-        15.f
-    });
-
-    m_mainLayer->addChild(m_contentPanel);
-    onTab(nullptr);
-=======
     bool const compact = overlay::isCompact();
     float const scale = overlay::desktopScale(m_size);
 
@@ -1288,7 +566,6 @@ void ModMenu::highlightTabs() {
             caption->setColor(theme::Text);
         }
     }
->>>>>>> Stashed changes
 }
 
 ModMenu* ModMenu::create() {
@@ -1303,16 +580,9 @@ ModMenu* ModMenu::create() {
 }
 
 void ModMenu::toggle() {
-<<<<<<< Updated upstream
-    // F3 acts like a back action: close the deepest open submenu first.
-    if (closeTopNestedPopup())
-=======
     if (overlay::closeTop())
->>>>>>> Stashed changes
         return;
 
-    // The ModUniversal menu is intentionally unavailable during active,
-    // unpaused gameplay, but remains usable from the pause screen.
     if (auto* playLayer = PlayLayer::get();
         playLayer && !playLayer->m_isPaused) {
         return;
@@ -1338,118 +608,11 @@ void ModMenu::onClose(CCObject* sender) {
 void ModMenu::onTab(CCObject* sender) {
     if (sender) {
         auto btn = static_cast<CCMenuItemSpriteExtra*>(sender);
-<<<<<<< Updated upstream
-        tab = btn->getTag();
-        m_currentTab = tab;
-
-        log::info("Clicked tab {}", tab);
-
-        auto tabMenu = static_cast<CCMenu*>(btn->getParent());
-
-        for (auto* child : CCArrayExt<CCNode*>(tabMenu->getChildren())) {
-            auto otherButton = typeinfo_cast<CCMenuItemSpriteExtra*>(child);
-            if (!otherButton)
-                continue;
-
-            auto sprite = typeinfo_cast<ButtonSprite*>(otherButton->getNormalImage());
-            if (!sprite)
-                continue;
-
-            sprite->setColor(
-                otherButton == btn
-                    ? ccColor3B{120, 255, 120}
-                    : ccColor3B{255, 255, 255}
-            );
-        }
-    }
-
-    if (!m_contentPanel)
-        return;
-
-    m_contentPanel->removeAllChildrenWithCleanup(true);
-
-    if (tab == 0) {
-        auto menu = CCMenu::create();
-        menu->setPosition({0.f, 0.f});
-        m_contentPanel->addChild(menu);
-
-        auto noclipLabel = createMenuLabel("Noclip", 0.5f);
-        noclipLabel->setAnchorPoint({0.f, 0.5f});
-        noclipLabel->setPosition({105.f, 62.f});
-        m_contentPanel->addChild(noclipLabel);
-
-        auto gearSprite = CCSprite::createWithSpriteFrameName("GJ_optionsBtn02_001.png");
-
-        auto noclipDefaultButton = createHackDefaultButton(
-            menu,
-            NoclipSettingKeys,
-            {280.f, 62.f}
-        );
-        s_noclipDefaultButton = noclipDefaultButton;
-
-        bool const hasNoclipChanges =
-            noclipDefaultButton && noclipDefaultButton->isVisible();
-
-        if (gearSprite) {
-            gearSprite->setScale(0.72f);
-
-            auto gearButton = CCMenuItemSpriteExtra::create(
-                gearSprite,
-                this,
-                menu_selector(ModMenu::onNoclipSettings)
-            );
-            gearButton->setPosition({
-                hasNoclipChanges ? 235.f : 275.f,
-                62.f
-            });
-            s_noclipSettingsButton = gearButton;
-            menu->addChild(gearButton);
-        }
-        else {
-            log::warn("Could not load noclip settings gear sprite");
-        }
-
-        auto noclipToggle = createNoclipCheckbox(
-            menu,
-            "noclip-enabled",
-            {330.f, 62.f}
-        );
-        s_noclipCheckboxButton = noclipToggle;
-
-        if (!noclipToggle)
-            log::warn("Could not create noclip checkbox");
-
-        return;
-    }
-
-    auto button = ButtonSprite::create(
-        fmt::format("TEST {}", tab + 1).c_str(),
-        "goldFont.fnt",
-        "GJ_button_01.png",
-        0.7f
-    );
-
-    auto testButton = CCMenuItemSpriteExtra::create(
-        button,
-        this,
-        nullptr
-    );
-
-    auto menu = CCMenu::create();
-    menu->setPosition(m_contentPanel->getContentSize() / 2.f);
-    menu->addChild(testButton);
-    m_contentPanel->addChild(menu);
-}
-
-void ModMenu::onNoclipSettings(CCObject*) {
-    openNoclipSettings();
-=======
         m_currentTab = std::clamp(btn->getTag(), 0, catalog::tabCount() - 1);
         highlightTabs();
     }
 
     fillContent();
->>>>>>> Stashed changes
 }
 
 void ModMenu::refreshCurrentTab() {

@@ -2,6 +2,7 @@
 
 #include <Geode/Geode.hpp>
 #include <Geode/ui/Popup.hpp>
+#include <Geode/ui/ScrollLayer.hpp>
 
 using namespace geode::prelude;
 
@@ -40,10 +41,7 @@ private:
     inline static ModMenu* s_instance = nullptr;
 
     CCNode* m_contentPanel = nullptr;
-<<<<<<< Updated upstream
-=======
     geode::ScrollLayer* m_contentScroll = nullptr;
     CCMenu* m_tabMenu = nullptr;
->>>>>>> Stashed changes
     int m_currentTab = 0;
 };
