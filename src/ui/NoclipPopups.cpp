@@ -299,7 +299,7 @@ protected:
 
         if (auto category = createCategoryRow(
             {rowSize.width, 22.f},
-            "HAZARD CATEGORIES"
+            "SPIKE PHASING OPTIONS"
         )) {
             content->addChild(category);
         }
