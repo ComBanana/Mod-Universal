@@ -37,20 +37,30 @@ CCNode* createFeatureCard(catalog::FeatureDef const& feature, CCSize size) {
         card->addChild(background, 0);
     }
 
-    float const pad = std::min(22.f, size.width * 0.05f);
-    auto title = ui::label(feature.title, size.height >= 120.f ? 0.70f : 0.58f);
+    float const scale = size.height / theme::CardHeight;
+    float const pad = 18.f * scale;
+
+    auto title = ui::label(feature.title, 0.54f);
     if (title) {
         title->setAnchorPoint({0.f, 0.5f});
-        title->setPosition({pad, size.height - 29.f});
-        title->limitLabelWidth(size.width - pad * 2.f - 88.f, title->getScale(), 0.42f);
+        title->setPosition({pad, size.height - 24.f * scale});
+        title->limitLabelWidth(
+            size.width - pad * 2.f - 88.f * scale,
+            title->getScale(),
+            0.38f
+        );
         card->addChild(title, 2);
     }
 
-    auto desc = ui::label(feature.description, 0.48f, theme::Text);
+    auto desc = ui::label(feature.description, 0.38f, theme::Text);
     if (desc) {
         desc->setAnchorPoint({0.f, 1.f});
-        desc->setPosition({pad, size.height - 46.f});
-        desc->limitLabelWidth(size.width - pad * 2.f, 0.48f, 0.32f);
+        desc->setPosition({pad, size.height - 46.f * scale});
+        desc->limitLabelWidth(
+            std::min(290.f * scale, size.width - pad * 2.f),
+            0.38f,
+            0.25f
+        );
         card->addChild(desc, 2);
     }
 
@@ -60,10 +70,11 @@ CCNode* createFeatureCard(catalog::FeatureDef const& feature, CCSize size) {
 
     char const* const status = catalog::statusLabel(feature);
     bool const active = catalog::isStatusActive(feature);
-    float const pillWidth = std::strcmp(status, "ON") == 0 ? 72.f : 62.f;
+    float const pillWidth = (std::strcmp(status, "ON") == 0 ? 72.f : 62.f) * scale;
+    float const pillHeight = 26.f * scale;
     CCPoint const pillPos = {
         size.width - pad - pillWidth / 2.f,
-        size.height - 29.f
+        size.height - 29.f * scale
     };
 
     if (feature.status == catalog::FeatureStatus::Toggle) {
@@ -71,7 +82,7 @@ CCNode* createFeatureCard(catalog::FeatureDef const& feature, CCSize size) {
             menu,
             status,
             pillPos,
-            {pillWidth, 26.f},
+            {pillWidth, pillHeight},
             [id = std::string(feature.id)](CCMenuItemSpriteExtra*) {
                 for (auto const& item : catalog::features()) {
                     if (item.id != id)
@@ -88,12 +99,12 @@ CCNode* createFeatureCard(catalog::FeatureDef const& feature, CCSize size) {
     else {
         auto pill = ui::roundedRect(
             active ? theme::StatusOn : theme::StatusIdle,
-            {pillWidth, 26.f},
-            13.f
+            {pillWidth, pillHeight},
+            pillHeight / 2.f
         );
         if (pill) {
             pill->setPosition(pillPos);
-            auto caption = ui::label(status, 0.46f);
+            auto caption = ui::label(status, 0.34f);
             if (caption) {
                 caption->setTag(StatusLabelTag);
                 caption->setPosition(pill->getContentSize() / 2.f);
@@ -108,10 +119,10 @@ CCNode* createFeatureCard(catalog::FeatureDef const& feature, CCSize size) {
             menu,
             "RESET",
             {
-                size.width - pad - pillWidth - 40.f,
-                size.height - 29.f
+                size.width - pad - pillWidth - 40.f * scale,
+                size.height - 29.f * scale
             },
-            {58.f, 22.f},
+            {58.f * scale, 22.f * scale},
             [id = std::string(feature.id)]() {
                 for (auto const& item : catalog::features()) {
                     if (item.id != id)
@@ -127,8 +138,8 @@ CCNode* createFeatureCard(catalog::FeatureDef const& feature, CCSize size) {
     if (feature.hasSettings && feature.openSettings && feature.settingsEnabled) {
         auto hit = CCLayerColor::create(
             {0, 0, 0, 0},
-            size.width - pad * 2.f - 100.f,
-            64.f
+            size.width - pad * 2.f - 100.f * scale,
+            64.f * scale
         );
         if (hit) {
             hit->ignoreAnchorPointForPosition(false);
@@ -145,8 +156,8 @@ CCNode* createFeatureCard(catalog::FeatureDef const& feature, CCSize size) {
             if (button) {
                 ui::disablePressAnim(button);
                 button->setPosition({
-                    pad + (size.width - pad * 2.f - 100.f) / 2.f,
-                    size.height - 40.f
+                    pad + (size.width - pad * 2.f - 100.f * scale) / 2.f,
+                    size.height - 40.f * scale
                 });
                 menu->addChild(button);
             }
@@ -225,7 +236,7 @@ void ModMenu::createHeader() {
     }
 
     if (!compact) {
-        auto version = ui::label("v0.2.0", 0.52f * scale);
+        auto version = ui::label("v0.2.0", 0.72f * scale);
         if (version) {
             version->setAnchorPoint({0.f, 0.5f});
             version->setPosition({
@@ -240,26 +251,40 @@ void ModMenu::createHeader() {
     if (!headerMenu)
         return;
 
-    float const closeSize = compact ? 28.f * scale : 34.f * scale;
-    float const resetWidth = compact ? 96.f * scale : 126.f * scale;
-    float const resetHeight = compact ? 28.f * scale : 34.f * scale;
-    float const right = m_size.width / 2.f + headerWidth / 2.f - 16.f * scale;
+    float const resetWidth = (compact ? 96.f : 126.f) * scale;
+    float const resetHeight = (compact ? 28.f : 34.f) * scale;
+    float const right = m_size.width / 2.f + headerWidth / 2.f -
+        (compact ? 16.f : 21.f) * scale;
 
-    ui::textButton(
-        headerMenu,
-        "X",
-        {right - closeSize / 2.f, headerY},
-        {closeSize, closeSize},
-        [this]() { this->onClose(nullptr); }
-    );
+    if (compact) {
+        float const closeSize = 28.f * scale;
+        ui::textButton(
+            headerMenu,
+            "X",
+            {right - closeSize / 2.f, headerY},
+            {closeSize, closeSize},
+            [this]() { this->onClose(nullptr); }
+        );
 
-    ui::textButton(
-        headerMenu,
-        "Set to Default",
-        {right - closeSize - 8.f * scale - resetWidth / 2.f, headerY},
-        {resetWidth, resetHeight},
-        [this]() { this->onSetAllToDefault(nullptr); }
-    );
+        ui::textButton(
+            headerMenu,
+            "Set to Default",
+            {right - closeSize - 8.f * scale - resetWidth / 2.f, headerY},
+            {resetWidth, resetHeight},
+            [this]() { this->onSetAllToDefault(nullptr); }
+        );
+    }
+    else {
+        // The desktop 16:9 Figma frame has only one header action. Keeping the
+        // reset button at x=1029..1155 leaves the clean right margin intact.
+        ui::textButton(
+            headerMenu,
+            "Set to Default",
+            {right - resetWidth / 2.f, headerY},
+            {resetWidth, resetHeight},
+            [this]() { this->onSetAllToDefault(nullptr); }
+        );
+    }
 }
 
 void ModMenu::createTabBar() {
@@ -340,7 +365,7 @@ void ModMenu::createTabBar() {
         theme::Panel
     );
 
-    auto modules = ui::label("MODULES", 0.50f * scale);
+    auto modules = ui::label("MODULES", 0.66f * scale);
     if (modules) {
         modules->setAnchorPoint({0.f, 0.5f});
         modules->setPosition({
@@ -388,7 +413,7 @@ void ModMenu::createTabBar() {
 
         item->setContentSize({buttonWidth, buttonHeight});
 
-        auto caption = ui::label(tabs[i].label, 0.62f * scale);
+        auto caption = ui::label(tabs[i].label, 0.78f * scale);
         if (caption) {
             caption->setTag(TabLabelTag);
             caption->setAnchorPoint({0.f, 0.5f});
@@ -460,7 +485,7 @@ void ModMenu::fillContent() {
 
     auto const& tab = catalog::tabs()[static_cast<size_t>(m_currentTab)];
 
-    auto heading = ui::label(tab.heading, compact ? 0.78f * scale : 0.92f * scale);
+    auto heading = ui::label(tab.heading, compact ? 0.78f * scale : 1.18f * scale);
     if (heading) {
         heading->setAnchorPoint({0.f, 0.5f});
         heading->setPosition({
@@ -470,7 +495,7 @@ void ModMenu::fillContent() {
         m_contentPanel->addChild(heading, 8);
     }
 
-    auto subtitle = ui::label(tab.subtitle, compact ? 0.42f * scale : 0.48f * scale);
+    auto subtitle = ui::label(tab.subtitle, compact ? 0.42f * scale : 0.58f * scale);
     if (subtitle) {
         subtitle->setAnchorPoint({0.f, 0.5f});
         subtitle->setPosition({
@@ -492,12 +517,14 @@ void ModMenu::fillContent() {
     m_contentPanel->addChild(m_contentScroll, 5);
 
     auto features = catalog::featuresFor(catalog::tabAt(m_currentTab));
-    int const columns = (!compact && size.width >= 560.f) ? 2 : 1;
+    int const columns = compact ? 1 : 2;
     float const pad = compact ? 16.f * scale : 26.f * scale;
     float const gapX = compact ? 12.f * scale : theme::CardGapX * scale;
     float const gapY = compact ? 12.f * scale : theme::CardGapY * scale;
     float const usable = std::max(120.f, scrollSize.width - pad * 2.f);
-    float const cardWidth = (usable - gapX * (columns - 1)) / static_cast<float>(columns);
+    float const cardWidth = compact
+        ? usable
+        : theme::CardWidth * scale;
     float const cardHeight = theme::CardHeight * (compact ? std::min(1.f, scale * 1.05f) : scale);
 
     auto content = m_contentScroll->m_contentLayer;
@@ -545,6 +572,11 @@ void ModMenu::highlightTabs() {
     if (!m_tabMenu)
         return;
 
+    float const scale = overlay::desktopScale(m_size);
+    float const tabRadius = (overlay::isCompact()
+        ? theme::CompactTabRadius
+        : theme::TabRadius) * scale;
+
     for (auto* child : CCArrayExt<CCNode*>(m_tabMenu->getChildren())) {
         auto button = typeinfo_cast<CCMenuItemSpriteExtra*>(child);
         if (!button)
@@ -557,7 +589,8 @@ void ModMenu::highlightTabs() {
         bool const selected = button->getTag() == m_currentTab;
         ui::setRoundedRectColor(
             background,
-            selected ? theme::TabActive : theme::Card
+            selected ? theme::TabActive : theme::Card,
+            tabRadius
         );
 
         if (auto caption = typeinfo_cast<CCLabelBMFont*>(
@@ -603,6 +636,10 @@ void ModMenu::onClose(CCObject* sender) {
     overlay::saveModData();
     s_instance = nullptr;
     Popup::onClose(sender);
+}
+
+void ModMenu::keyBackClicked() {
+    this->onClose(nullptr);
 }
 
 void ModMenu::onTab(CCObject* sender) {
