@@ -25,6 +25,12 @@
 			"type": "title",
 			"name": "Noclip"
 		},
+		"show-hitboxes": {
+			"type": "bool",
+			"name": "Show Hitboxes",
+			"default": false,
+			"category": "universal"
+		},
 		"noclip-enabled": {
 			"type": "bool",
 			"name": "Noclip",
