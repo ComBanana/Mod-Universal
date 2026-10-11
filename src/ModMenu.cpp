@@ -420,9 +420,9 @@ void ModMenu::createTabBar() {
         });
         m_tabMenu->addChild(button);
     }
-}}
+}
 
-void ModMenu::createContentPanel() {
+void ModMenu::createContentPanel {
     bool const compact = overlay::isCompact();
     float const scale = overlay::desktopScale(m_size);
 
