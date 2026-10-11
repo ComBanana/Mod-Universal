@@ -131,10 +131,10 @@ std::vector<FeatureDef> const& features() {
         {
             .tab = TabId::Settings,
             .id = "interface",
-            .title = "Interface",
-            .description = "Configure the menu and feature shortcut keys.",
+            .title = "Customize Keybind",
+            .description = "Change or add keybinds to individual mods.",
             .status = FeatureStatus::Ready,
-            .relatedKeys = {"toggle-menu"},
+            .relatedKeys = {"toggle-menu", "toggle-noclip", "toggle-hitboxes"},
             .hasSettings = true,
             .openSettings = []() {
                 openSettingsPopup(Mod::get());
