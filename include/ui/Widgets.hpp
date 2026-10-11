@@ -25,6 +25,7 @@ CCLayerColor* roundedRect(
 void setRoundedRectColor(
     CCLayerColor* layer,
     ccColor3B color,
+    float radius,
     GLubyte opacity = 255
 );
 
