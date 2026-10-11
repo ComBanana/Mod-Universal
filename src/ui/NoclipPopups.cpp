@@ -352,6 +352,67 @@ public:
     }
 };
 
+class HitboxSettingsPopup : public ThemedPopup {
+protected:
+    bool init() {
+        bool const compact = overlay::isCompact();
+        auto const size = overlay::popupSize(
+            compact ? 360.f : 420.f,
+            compact ? 280.f : 240.f
+        );
+
+        if (!setupShell(
+            size,
+            "Show Hitboxes",
+            "Configure extra player collision outlines."
+        )) {
+            return false;
+        }
+
+        CCSize const rowSize = {m_size.width - 40.f, 36.f};
+        if (auto row = createToggleRow(
+            rowSize,
+            "Advanced Hitboxes",
+            "show-hitboxes-advanced"
+        )) {
+            row->setPosition({
+                m_size.width / 2.f,
+                m_size.height / 2.f - 4.f
+            });
+            m_mainLayer->addChild(row, 5);
+        }
+
+        auto info = ui::mutedLabel(
+            "Adds fixed player bounds and the smaller solid-collision box.",
+            compact ? 0.25f : 0.29f
+        );
+        if (info) {
+            info->setAnchorPoint({0.5f, 0.5f});
+            info->setPosition({m_size.width / 2.f, 68.f});
+            info->limitLabelWidth(m_size.width - 40.f, 0.29f, 0.25f);
+            m_mainLayer->addChild(info, 5);
+        }
+
+        return true;
+    }
+
+public:
+    static HitboxSettingsPopup* create() {
+        auto ret = new HitboxSettingsPopup();
+        if (ret && ret->init()) {
+            ret->autorelease();
+            return ret;
+        }
+
+        delete ret;
+        return nullptr;
+    }
+
+    void present() {
+        showAndRegister();
+    }
+};
+
 } // namespace
 
 namespace mu::ui {
@@ -365,6 +426,11 @@ void openNoclipSettings() {
 // the main scrollable Noclip settings panel.
 void openNoclipHazardSettings() {
     openNoclipSettings();
+}
+
+void openHitboxSettings() {
+    if (auto popup = HitboxSettingsPopup::create())
+        popup->present();
 }
 
 } // namespace mu::ui
