@@ -18,13 +18,20 @@ protected:
         if (m_bgSprite)
             m_bgSprite->setVisible(false);
 
-        if (m_closeBtn) {
-            m_closeBtn->setAnchorPoint({0.5f, 0.5f});
-            m_closeBtn->setPosition({
-                m_size.width - 22.f,
-                m_size.height - 22.f
-            });
-            m_closeBtn->setScale(0.62f);
+        // Hide Geometry Dash's default close sprite and use the same
+        // rounded dark control as the main Mod Universal header.
+        if (m_closeBtn)
+            m_closeBtn->setVisible(false);
+
+        auto headerMenu = ui::menuOn(m_mainLayer, 30);
+        if (headerMenu) {
+            ui::textButton(
+                headerMenu,
+                "X",
+                {m_size.width - 34.f, m_size.height - 36.f},
+                {30.f, 30.f},
+                [this]() { this->onClosePopup(nullptr); }
+            );
         }
 
         ui::panel(
