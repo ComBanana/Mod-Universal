@@ -52,7 +52,10 @@
 			"type": "string",
 			"name": "Block Collision Mode",
 			"default": "safe-touch",
-			"one-of": ["safe-touch", "no-touch"],
+			"one-of": [
+				"safe-touch",
+				"no-touch"
+			],
 			"enable-if": "noclip-enabled && noclip-phase-blocks"
 		},
 		"noclip-phase-slopes": {
@@ -102,6 +105,22 @@
 			"name": "Other Hazards",
 			"default": true,
 			"enable-if": "noclip-enabled && noclip-phase-hazards"
+		},
+		"toggle-noclip": {
+			"type": "keybind",
+			"name": "Toggle Noclip",
+			"description": "Toggle Noclip during gameplay.",
+			"default": "N",
+			"category": "gameplay",
+			"allow-in-text-inputs": false
+		},
+		"toggle-hitboxes": {
+			"type": "keybind",
+			"name": "Toggle Show Hitboxes",
+			"description": "Toggle level hitbox outlines during gameplay.",
+			"default": "H",
+			"category": "gameplay",
+			"allow-in-text-inputs": false
 		}
 	}
 }
