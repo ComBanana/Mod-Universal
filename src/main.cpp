@@ -2,6 +2,7 @@
 #include <Geode/modify/PlayLayer.hpp>
 
 #include "../include/ModMenu.hpp"
+#include "../include/ui/Overlay.hpp"
 
 using namespace geode::prelude;
 
@@ -36,6 +37,32 @@ $on_mod(Loaded) {
             // closes the deepest nested popup first, then the main menu.
             saveNoclipSettings();
             ModMenu::toggle();
+        }
+    );
+
+    listenForKeybindSettingPresses(
+        "toggle-noclip",
+        [](Keybind const&, bool down, bool repeat, double) {
+            if (!down || repeat)
+                return;
+
+            ModMenu::setNoclipEnabled(!ModMenu::isNoclipEnabled());
+            overlay::saveModData();
+            ModMenu::refreshCurrentTab();
+        }
+    );
+
+    listenForKeybindSettingPresses(
+        "toggle-hitboxes",
+        [](Keybind const&, bool down, bool repeat, double) {
+            if (!down || repeat)
+                return;
+
+            bool const enabled =
+                !Mod::get()->getSettingValue<bool>("show-hitboxes");
+            Mod::get()->setSettingValue<bool>("show-hitboxes", enabled);
+            overlay::saveModData();
+            ModMenu::refreshCurrentTab();
         }
     );
 }
