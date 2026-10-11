@@ -138,10 +138,9 @@ protected:
 class NoclipHazardPopup : public ThemedPopup {
 protected:
     bool init() {
-        auto const screen = CCDirector::sharedDirector()->getWinSize();
         auto const size = overlay::popupSize(
             560.f,
-            screen.width < screen.height ? 620.f : 430.f
+            overlay::isCompact() ? 620.f : 430.f
         );
 
         if (!setupShell(
@@ -197,10 +196,9 @@ protected:
     CCLabelBMFont* m_blockModeLabel = nullptr;
 
     bool init() {
-        auto const screen = CCDirector::sharedDirector()->getWinSize();
         auto const size = overlay::popupSize(
             560.f,
-            screen.width < screen.height ? 620.f : 450.f
+            overlay::isCompact() ? 620.f : 450.f
         );
 
         if (!setupShell(
@@ -281,11 +279,8 @@ protected:
             theme::Muted
         );
 
-        if (hazard)
-            hazard->setEnabled(false);
-
         auto info = ui::mutedLabel(
-            "Hazard categories will be configurable later.",
+            "Choose which hazard categories Noclip can ignore.",
             0.29f
         );
         if (info) {
