@@ -80,6 +80,10 @@ std::vector<FeatureDef> const& features() {
             .description = "Display collision outlines during gameplay.",
             .status = FeatureStatus::Toggle,
             .toggleKey = "show-hitboxes",
+            .relatedKeys = {"show-hitboxes-advanced"},
+            .hasSettings = true,
+            .settingsEnabled = true,
+            .openSettings = []() { mu::ui::openHitboxSettings(); },
         },
         {
             .tab = TabId::Player,
